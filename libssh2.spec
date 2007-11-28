@@ -1,6 +1,6 @@
 Name:           libssh2
 Version:        0.18
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        A library implementing the SSH2 protocol
 
 Group:          System Environment/Libraries
@@ -93,6 +93,9 @@ rm -rf %{buildroot}
 %{_libdir}/*.so
 
 %changelog
+* Tue Nov 27 2007 Chris Weyl <cweyl@alumni.drew.edu> 0.18-5
+- bump
+
 * Tue Nov 27 2007 Chris Weyl <cweyl@alumni.drew.edu> 0.18-4
 - add INSTALL arg to make install vs env. var
 
