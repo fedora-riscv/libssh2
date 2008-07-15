@@ -1,6 +1,6 @@
 Name:           libssh2
 Version:        0.18
-Release:        7%{?dist}
+Release:        8%{?dist}
 Summary:        A library implementing the SSH2 protocol
 
 Group:          System Environment/Libraries
@@ -11,6 +11,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  openssl-devel
 BuildRequires:  zlib-devel   
+BuildRequires:  pkgconfig
 
 %description
 libssh2 is a library implementing the SSH2 protocol as defined by
@@ -57,12 +58,12 @@ make %{?_smp_mflags}
 rm -rf %{buildroot}
 
 make install DESTDIR=%{buildroot} INSTALL="install -p"
-find %{buildroot} -name '*.la' -exec rm -f {} + 
+find %{buildroot} -name '*.la' -exec rm -f {} \; 
 
 # clean things up a bit for packaging
 ( cd example && make clean )
 rm -rf example/simple/.deps 
-find example/ -type f '(' -name '*.am' -o -name '*.in' ')' -exec rm -v {} +
+find example/ -type f '(' -name '*.am' -o -name '*.in' ')' -exec rm -v {} \;
 
 %check
 (cd tests && make check)
@@ -93,6 +94,9 @@ rm -rf %{buildroot}
 %{_libdir}/*.so
 
 %changelog
+* Tue Jul  1 2008  <djuran@redhat.com> - 0.18-8
+- Adapted for EPEL
+
 * Mon Feb 18 2008 Fedora Release Engineering <rel-eng@fedoraproject.org> - 0.18-7
 - Autorebuild for GCC 4.3
 
