@@ -1,6 +1,6 @@
 Name:           libssh2
 Version:        0.18
-Release:        8%{?dist}
+Release:        9%{?dist}
 Summary:        A library implementing the SSH2 protocol
 
 Group:          System Environment/Libraries
@@ -94,6 +94,9 @@ rm -rf %{buildroot}
 %{_libdir}/*.so
 
 %changelog
+* Tue Jul 15 2008 David Juran <djuran@redhat.com> - 0.18-9
+- Tagging sillyness
+
 * Tue Jul  1 2008  <djuran@redhat.com> - 0.18-8
 - Adapted for EPEL
 
