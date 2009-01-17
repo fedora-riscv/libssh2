@@ -1,6 +1,6 @@
 Name:           libssh2
 Version:        0.18
-Release:        7%{?dist}
+Release:        8%{?dist}
 Summary:        A library implementing the SSH2 protocol
 
 Group:          System Environment/Libraries
@@ -93,6 +93,9 @@ rm -rf %{buildroot}
 %{_libdir}/*.so
 
 %changelog
+* Sat Jan 17 2009 Tomas Mraz <tmraz@redhat.com> - 0.18-8
+- rebuild with new openssl
+
 * Mon Feb 18 2008 Fedora Release Engineering <rel-eng@fedoraproject.org> - 0.18-7
 - Autorebuild for GCC 4.3
 
