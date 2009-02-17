@@ -1,1 +1,7 @@
-libssh2-0.18.tar.gz
+libssh2-1.0.tar.gz
+libssh2*
+*.gz
+*.tar
+*.rpm
+x86_64
+.build*
