@@ -1,6 +1,6 @@
 Name:           libssh2
 Version:        1.0 
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        A library implementing the SSH2 protocol
 
 Group:          System Environment/Libraries
@@ -93,6 +93,9 @@ rm -rf %{buildroot}
 %{_libdir}/*.so
 
 %changelog
+* Wed Feb 25 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.0-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_11_Mass_Rebuild
+
 * Mon Feb 16 2009 Chris Weyl <cweyl@alumni.drew.edu> 1.0-1
 - update to 1.0
 
