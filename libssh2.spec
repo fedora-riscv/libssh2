@@ -1,12 +1,15 @@
 Name:           libssh2
 Version:        0.18
-Release:        9%{?dist}
+Release:        10%{?dist}
 Summary:        A library implementing the SSH2 protocol
 
 Group:          System Environment/Libraries
 License:        BSD
 URL:            http://www.libssh2.org/
 Source0:        http://downloads.sourceforge.net/libssh2/%{name}-%{version}.tar.gz
+
+Patch0:		libssh2-0.18-padding.patch
+
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  openssl-devel
@@ -41,6 +44,8 @@ developing applications that use %{name}.
 
 %prep
 %setup -q
+
+%patch0 -p1 -b .padding
 
 # make sure things are UTF-8...
 for i in ChangeLog NEWS ; do
@@ -94,6 +99,9 @@ rm -rf %{buildroot}
 %{_libdir}/*.so
 
 %changelog
+* Tue Dec 22 2009 David Juran <djuran@redhat.com> - 0.18-10
+- fix incorrect padding (Bz 539444)
+
 * Tue Jul 15 2008 David Juran <djuran@redhat.com> - 0.18-9
 - Tagging sillyness
 
