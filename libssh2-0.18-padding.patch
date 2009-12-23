@@ -1,0 +1,118 @@
+From: Peter Stuge <peter@stuge.se>
+Date: Sun, 6 Dec 2009 06:20:58 +0000 (+0100)
+Subject: Fix padding in ssh-dss signature blob encoding
+X-Git-Url: http://git.libssh2.org//gitweb.cgi?p=libssh2.git;a=commitdiff_plain;h=1aba38cd7d2658146675ce1737e5090f879f3068
+
+Fix padding in ssh-dss signature blob encoding
+
+DSA signatures consist of two 160-bit integers called r and s. In ssh-dss
+signature blobs r and s are stored directly after each other in binary
+representation, making up a 320-bit (40 byte) string. (See RFC4253 p14.)
+
+The crypto wrappers in libssh2 would either pack r and s incorrectly, or
+fail, when at least one integer was small enough to be stored in 19 bytes
+or less.
+
+The patch ensures that r and s are always stored as two 160 bit numbers.
+---
+
+diff --git a/src/libgcrypt.c b/src/libgcrypt.c
+index ba00284..b06be42 100644
+--- a/src/libgcrypt.c
++++ b/src/libgcrypt.c
+@@ -424,6 +424,8 @@ _libssh2_dsa_sha1_sign(libssh2_dsa_ctx * dsactx,
+         return -1;
+     }
+ 
++    memset(sig, 0, 40);
++
+ /* Extract R. */
+ 
+     data = gcry_sexp_find_token(sig_sexp, "r", 0);
+@@ -433,22 +435,12 @@ _libssh2_dsa_sha1_sign(libssh2_dsa_ctx * dsactx,
+     }
+ 
+     tmp = gcry_sexp_nth_data(data, 1, &size);
+-    if (!tmp) {
+-        ret = -1;
+-        goto out;
+-    }
+-
+-    if (tmp[0] == '\0') {
+-        tmp++;
+-        size--;
+-    }
+-
+-    if (size != 20) {
++    if (!tmp || size < 1 || size > 20) {
+         ret = -1;
+         goto out;
+     }
+ 
+-    memcpy(sig, tmp, 20);
++    memcpy(sig + (20 - size), tmp, size);
+ 
+     gcry_sexp_release(data);
+ 
+@@ -461,22 +453,12 @@ _libssh2_dsa_sha1_sign(libssh2_dsa_ctx * dsactx,
+     }
+ 
+     tmp = gcry_sexp_nth_data(data, 1, &size);
+-    if (!tmp) {
+-        ret = -1;
+-        goto out;
+-    }
+-
+-    if (tmp[0] == '\0') {
+-        tmp++;
+-        size--;
+-    }
+-
+-    if (size != 20) {
++    if (!tmp || size < 1 || size > 20) {
+         ret = -1;
+         goto out;
+     }
+ 
+-    memcpy(sig + 20, tmp, 20);
++    memcpy(sig + 20 + (20 - size), tmp, size);
+ 
+     ret = 0;
+   out:
+diff --git a/src/openssl.c b/src/openssl.c
+index 250ea63..000c9ec 100644
+--- a/src/openssl.c
++++ b/src/openssl.c
+@@ -420,7 +420,7 @@ _libssh2_dsa_sha1_sign(libssh2_dsa_ctx * dsactx,
+                        unsigned long hash_len, unsigned char *signature)
+ {
+     DSA_SIG *sig;
+-    int r_len, s_len, rs_pad;
++    int r_len, s_len;
+     (void) hash_len;
+ 
+     sig = DSA_do_sign(hash, SHA_DIGEST_LENGTH, dsactx);
+@@ -429,15 +429,20 @@ _libssh2_dsa_sha1_sign(libssh2_dsa_ctx * dsactx,
+     }
+ 
+     r_len = BN_num_bytes(sig->r);
++    if (r_len < 1 || r_len > 20) {
++        DSA_SIG_free(sig);
++        return -1;
++    }
+     s_len = BN_num_bytes(sig->s);
+-    rs_pad = (2 * SHA_DIGEST_LENGTH) - (r_len + s_len);
+-    if (rs_pad < 0) {
++    if (s_len < 1 || s_len > 20) {
+         DSA_SIG_free(sig);
+         return -1;
+     }
+ 
+-    BN_bn2bin(sig->r, signature + rs_pad);
+-    BN_bn2bin(sig->s, signature + rs_pad + r_len);
++    memset(signature, 0, 40);
++
++    BN_bn2bin(sig->r, signature + (20 - r_len));
++    BN_bn2bin(sig->s, signature + 20 + (20 - s_len));
+ 
+     DSA_SIG_free(sig);
