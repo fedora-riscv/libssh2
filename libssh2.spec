@@ -1,15 +1,13 @@
 Name:           libssh2
-Version:        1.2
-Release:        2%{?dist}
+Version:        1.2.2
+Release:        1%{?dist}
 Summary:        A library implementing the SSH2 protocol
 
 Group:          System Environment/Libraries
 License:        BSD
-URL:            http://www.libssh2.org/
+URL:            http://www.libssh2.org
 Source0:        http://libssh2.org/download/libssh2-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-
-Patch0:         transport_c_7a9d369.patch
 
 BuildRequires:  openssl-devel
 BuildRequires:  zlib-devel
@@ -34,6 +32,7 @@ developing applications that use %{name}.
 Summary:        Documentation for %{name}
 Group:          Development/Libraries
 Requires:       %{name} = %{version}-%{release}
+Requires:       pkgconfig
 
 %description    docs
 The %{name}-docs package contains man pages and examples for
@@ -42,7 +41,6 @@ developing applications that use %{name}.
 
 %prep
 %setup -q
-%patch0 -p1
 
 # make sure things are UTF-8...
 for i in ChangeLog NEWS ; do
@@ -95,8 +93,14 @@ rm -rf %{buildroot}
 %doc COPYING
 %{_includedir}/*
 %{_libdir}/*.so
+%{_libdir}pkgconfig/*
 
 %changelog
+* Thu Jan 14 2010 Chris Weyl <cweyl@alumni.drew.edu> 1.2.2-1
+- update to 1.2.2
+- drop old patch now in upstream
+- add new pkgconfig file to -devel
+
 * Mon Sep 21 2009 Chris Weyl <cweyl@alumni.drew.edu> 1.2-2
 - patch based on 683aa0f6b52fb1014873c961709102b5006372fc
 - disable tests (*sigh*)
