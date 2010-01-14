@@ -1,6 +1,6 @@
 Name:           libssh2
 Version:        1.2.2
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        A library implementing the SSH2 protocol
 
 Group:          System Environment/Libraries
@@ -93,9 +93,12 @@ rm -rf %{buildroot}
 %doc COPYING
 %{_includedir}/*
 %{_libdir}/*.so
-%{_libdir}pkgconfig/*
+%{_libdir}/pkgconfig/*
 
 %changelog
+* Thu Jan 14 2010 Chris Weyl <cweyl@alumni.drew.edu> 1.2.2-2
+- correct bad file entry under -devel
+
 * Thu Jan 14 2010 Chris Weyl <cweyl@alumni.drew.edu> 1.2.2-1
 - update to 1.2.2
 - drop old patch now in upstream
