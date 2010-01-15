@@ -1,18 +1,16 @@
 Name:           libssh2
-Version:        1.2 
+Version:        1.2.2
 Release:        2%{?dist}
 Summary:        A library implementing the SSH2 protocol
 
 Group:          System Environment/Libraries
 License:        BSD
-URL:            http://www.libssh2.org/
-Source0:        http://libssh2.org/download/libssh2-%{version}.tar.gz 
+URL:            http://www.libssh2.org
+Source0:        http://libssh2.org/download/libssh2-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-Patch0:         transport_c_7a9d369.patch
-
 BuildRequires:  openssl-devel
-BuildRequires:  zlib-devel   
+BuildRequires:  zlib-devel
 
 %description
 libssh2 is a library implementing the SSH2 protocol as defined by
@@ -30,10 +28,11 @@ Requires:       %{name} = %{version}-%{release}
 The %{name}-devel package contains libraries and header files for
 developing applications that use %{name}.
 
-%package        docs 
+%package        docs
 Summary:        Documentation for %{name}
 Group:          Development/Libraries
 Requires:       %{name} = %{version}-%{release}
+Requires:       pkgconfig
 
 %description    docs
 The %{name}-docs package contains man pages and examples for
@@ -42,7 +41,6 @@ developing applications that use %{name}.
 
 %prep
 %setup -q
-%patch0 -p1
 
 # make sure things are UTF-8...
 for i in ChangeLog NEWS ; do
@@ -60,15 +58,15 @@ make %{?_smp_mflags}
 rm -rf %{buildroot}
 
 make install DESTDIR=%{buildroot} INSTALL="install -p"
-find %{buildroot} -name '*.la' -exec rm -f {} + 
+find %{buildroot} -name '*.la' -exec rm -f {} +
 
 # clean things up a bit for packaging
 ( cd example && make clean )
-rm -rf example/simple/.deps 
+rm -rf example/simple/.deps
 find example/ -type f '(' -name '*.am' -o -name '*.in' ')' -exec rm -v {} +
 
 %check
-# tests are currently not doing so well under rpmbuild 
+# tests are currently not doing so well under rpmbuild
 #(cd tests && make check)
 
 %clean
@@ -92,11 +90,20 @@ rm -rf %{buildroot}
 
 %files devel
 %defattr(-,root,root,-)
-%doc COPYING 
+%doc COPYING
 %{_includedir}/*
 %{_libdir}/*.so
+%{_libdir}/pkgconfig/*
 
 %changelog
+* Thu Jan 14 2010 Chris Weyl <cweyl@alumni.drew.edu> 1.2.2-2
+- correct bad file entry under -devel
+
+* Thu Jan 14 2010 Chris Weyl <cweyl@alumni.drew.edu> 1.2.2-1
+- update to 1.2.2
+- drop old patch now in upstream
+- add new pkgconfig file to -devel
+
 * Mon Sep 21 2009 Chris Weyl <cweyl@alumni.drew.edu> 1.2-2
 - patch based on 683aa0f6b52fb1014873c961709102b5006372fc
 - disable tests (*sigh*)
