@@ -1,6 +1,6 @@
 Name:           libssh2
 Version:        1.2.2
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        A library implementing the SSH2 protocol
 
 Group:          System Environment/Libraries
@@ -8,6 +8,9 @@ License:        BSD
 URL:            http://www.libssh2.org
 Source0:        http://libssh2.org/download/libssh2-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+
+# aka commit 1aba38cd7d2658146675ce1737e5090f879f306
+Patch0:         libssh2-1.2.2-padding.patch
 
 BuildRequires:  openssl-devel
 BuildRequires:  zlib-devel
@@ -41,6 +44,7 @@ developing applications that use %{name}.
 
 %prep
 %setup -q
+%patch0 -p1
 
 # make sure things are UTF-8...
 for i in ChangeLog NEWS ; do
@@ -96,6 +100,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/*
 
 %changelog
+* Mon Jan 18 2010 Chris Weyl <cweyl@alumni.drew.edu> 1.2.2-3
+- patch w/1aba38cd7d2658146675ce1737e5090f879f306; not yet in a GA release
+
 * Thu Jan 14 2010 Chris Weyl <cweyl@alumni.drew.edu> 1.2.2-2
 - correct bad file entry under -devel
 
