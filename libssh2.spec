@@ -1,6 +1,6 @@
 Name:           libssh2
 Version:        1.2.2
-Release:        2%{?dist}
+Release:        4%{?dist}
 Summary:        A library implementing the SSH2 protocol
 
 Group:          System Environment/Libraries
@@ -9,8 +9,14 @@ URL:            http://www.libssh2.org
 Source0:        http://libssh2.org/download/libssh2-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
+# aka commit 1aba38cd7d2658146675ce1737e5090f879f306
+Patch0:         libssh2-1.2.2-padding.patch
+
 BuildRequires:  openssl-devel
 BuildRequires:  zlib-devel
+
+# tests
+BuildRequires:  openssh-server
 
 %description
 libssh2 is a library implementing the SSH2 protocol as defined by
@@ -41,6 +47,7 @@ developing applications that use %{name}.
 
 %prep
 %setup -q
+%patch0 -p1
 
 # make sure things are UTF-8...
 for i in ChangeLog NEWS ; do
@@ -66,8 +73,9 @@ rm -rf example/simple/.deps
 find example/ -type f '(' -name '*.am' -o -name '*.in' ')' -exec rm -v {} +
 
 %check
-# tests are currently not doing so well under rpmbuild
-#(cd tests && make check)
+# sshd/loopback test fails under local build, with selinux enforcing 
+%{?_without_sshd_tests:echo "Skipping sshd tests" ; echo "exit 0" > tests/ssh2.sh }
+(cd tests && make check)
 
 %clean
 rm -rf %{buildroot}
@@ -96,6 +104,13 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/*
 
 %changelog
+* Mon Jan 18 2010 Chris Weyl <cweyl@alumni.drew.edu> 1.2.2-4
+- enable tests; conditionalize sshd test, which fails with a funky SElinux
+  error when run locally
+
+* Mon Jan 18 2010 Chris Weyl <cweyl@alumni.drew.edu> 1.2.2-3
+- patch w/1aba38cd7d2658146675ce1737e5090f879f306; not yet in a GA release
+
 * Thu Jan 14 2010 Chris Weyl <cweyl@alumni.drew.edu> 1.2.2-2
 - correct bad file entry under -devel
 
