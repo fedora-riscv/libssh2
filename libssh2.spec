@@ -1,6 +1,6 @@
 Name:           libssh2
 Version:        1.2.2
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        A library implementing the SSH2 protocol
 
 Group:          System Environment/Libraries
@@ -29,6 +29,7 @@ SECSH-DHGEX(04), and SECSH-NUMBERS(10).
 Summary:        Development files for %{name}
 Group:          Development/Libraries
 Requires:       %{name} = %{version}-%{release}
+Requires:       pkgconfig
 
 %description    devel
 The %{name}-devel package contains libraries and header files for
@@ -38,7 +39,6 @@ developing applications that use %{name}.
 Summary:        Documentation for %{name}
 Group:          Development/Libraries
 Requires:       %{name} = %{version}-%{release}
-Requires:       pkgconfig
 
 %description    docs
 The %{name}-docs package contains man pages and examples for
@@ -104,6 +104,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/*
 
 %changelog
+* Wed Jan 20 2010 Chris Weyl <cweyl@alumni.drew.edu> 1.2.2-5
+- pkgconfig dep should be with -devel, not -docs
+
 * Mon Jan 18 2010 Chris Weyl <cweyl@alumni.drew.edu> 1.2.2-4
 - enable tests; conditionalize sshd test, which fails with a funky SElinux
   error when run locally
