@@ -1,6 +1,6 @@
 Name:           libssh2
-Version:        1.2.2
-Release:        5%{?dist}
+Version:        1.2.4
+Release:        1%{?dist}
 Summary:        A library implementing the SSH2 protocol
 
 Group:          System Environment/Libraries
@@ -8,9 +8,6 @@ License:        BSD
 URL:            http://www.libssh2.org
 Source0:        http://libssh2.org/download/libssh2-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-
-# aka commit 1aba38cd7d2658146675ce1737e5090f879f306
-Patch0:         libssh2-1.2.2-padding.patch
 
 BuildRequires:  openssl-devel
 BuildRequires:  zlib-devel
@@ -47,7 +44,6 @@ developing applications that use %{name}.
 
 %prep
 %setup -q
-%patch0 -p1
 
 # make sure things are UTF-8...
 for i in ChangeLog NEWS ; do
@@ -69,7 +65,7 @@ find %{buildroot} -name '*.la' -exec rm -f {} +
 
 # clean things up a bit for packaging
 ( cd example && make clean )
-rm -rf example/simple/.deps
+find example/ -type d -name .deps -exec rm -rf {} +
 find example/ -type f '(' -name '*.am' -o -name '*.in' ')' -exec rm -v {} +
 
 %check
@@ -104,6 +100,11 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/*
 
 %changelog
+* Fri Mar 12 2010 Chris Weyl <cweyl@alumni.drew.edu> 1.2.4-1
+- update to 1.2.4
+- drop old patch0
+- be more aggressive about keeping .deps from intruding into -docs
+
 * Wed Jan 20 2010 Chris Weyl <cweyl@alumni.drew.edu> 1.2.2-5
 - pkgconfig dep should be with -devel, not -docs
 
