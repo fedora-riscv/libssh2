@@ -1,5 +1,5 @@
 Name:           libssh2
-Version:        1.2.4
+Version:        1.2.7
 Release:        1%{?dist}
 Summary:        A library implementing the SSH2 protocol
 
@@ -51,6 +51,11 @@ for i in ChangeLog NEWS ; do
     mv new $i
 done
 
+# make it possible to launch OpenSSH server for testing purposes
+chcon -t initrc_exec_t tests/ssh2.sh || :
+chcon -Rt etc_t tests/etc || :
+chcon -t sshd_key_t tests/etc/{host,user} || :
+
 %build
 %configure --disable-static --enable-shared
 
@@ -67,6 +72,9 @@ find %{buildroot} -name '*.la' -exec rm -f {} +
 ( cd example && make clean )
 find example/ -type d -name .deps -exec rm -rf {} +
 find example/ -type f '(' -name '*.am' -o -name '*.in' ')' -exec rm -v {} +
+
+# avoid multilib conflict on libssh2-docs
+mv -v example/Makefile example/Makefile.%{_arch}
 
 %check
 # sshd/loopback test fails under local build, with selinux enforcing 
@@ -100,6 +108,11 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/*
 
 %changelog
+* Tue Oct 12 2010 Kamil Dudka <kdudka@redhat.com> 1.2.7-1
+- update to 1.2.7 (#632916)
+- avoid multilib conflict on libssh2-docs
+- avoid build failure in mock with SELinux in the enforcing mode (#558964)
+
 * Fri Mar 12 2010 Chris Weyl <cweyl@alumni.drew.edu> 1.2.4-1
 - update to 1.2.4
 - drop old patch0
