@@ -1,6 +1,6 @@
 Name:           libssh2
-Version:        1.2.7
-Release:        2%{?dist}
+Version:        1.3.0
+Release:        1%{?dist}
 Summary:        A library implementing the SSH2 protocol
 
 Group:          System Environment/Libraries
@@ -112,6 +112,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/*
 
 %changelog
+* Thu Sep 08 2011 Kamil Dudka <kdudka@redhat.com> 1.3.0-1
+- update to 1.3.0
+
 * Sat Jun 25 2011 Dennis Gilmore <dennis@ausil.us> - 1.2.7-2
 - sshd/loopback test fails in the sparc buildsystem
 
