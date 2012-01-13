@@ -1,6 +1,6 @@
 Name:           libssh2
 Version:        1.3.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        A library implementing the SSH2 protocol
 
 Group:          System Environment/Libraries
@@ -112,6 +112,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/*
 
 %changelog
+* Fri Jan 13 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.3.0-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
+
 * Thu Sep 08 2011 Kamil Dudka <kdudka@redhat.com> 1.3.0-1
 - update to 1.3.0
 
