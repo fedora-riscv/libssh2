@@ -83,7 +83,7 @@ make -C example clean
 rm -rf example/.deps
 find example/ -type f '(' -name '*.am' -o -name '*.in' ')' -exec rm -v {} \;
 
-# avoid multilib conflict on libssh2-docs
+# avoid multilib conflict on libssh2-devel
 mv -v example/Makefile example/Makefile.%{_arch}
 
 %check
@@ -115,11 +115,12 @@ rm -rf %{buildroot}
 
 %files docs
 %defattr(-,root,root,-)
-%doc HACKING example/
+%doc HACKING
 %{_mandir}/man3/libssh2_*.3*
 
 %files devel
 %defattr(-,root,root,-)
+%doc example/
 %{_includedir}/libssh2.h
 %{_includedir}/libssh2_publickey.h
 %{_includedir}/libssh2_sftp.h
@@ -129,6 +130,7 @@ rm -rf %{buildroot}
 %changelog
 * Fri Jan 13 2012 Paul Howarth <paul@city-fan.org> 1.3.0-3
 - make docs package noarch where possible
+- example includes arch-specific bits, so move to devel package
 - use patch rather than scripted iconv to fix character encoding
 - don't make assumptions about SELinux context types used for the ssh server
   in the test suite
