@@ -7,27 +7,27 @@
 %global noarch_docs_package 0
 %endif
 
-Name:           libssh2
-Version:        1.3.0
-Release:        3%{?dist}
-Summary:        A library implementing the SSH2 protocol
-Group:          System Environment/Libraries
-License:        BSD
-URL:            http://www.libssh2.org/
-Source0:        http://libssh2.org/download/libssh2-%{version}.tar.gz
-Patch0:         libssh2-1.2.9-utf8.patch
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
-BuildRequires:  openssl-devel
-BuildRequires:  zlib-devel
+Name:		libssh2
+Version:	1.3.0
+Release:	3%{?dist}
+Summary:	A library implementing the SSH2 protocol
+Group:		System Environment/Libraries
+License:	BSD
+URL:		http://www.libssh2.org/
+Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
+Patch0:		libssh2-1.2.9-utf8.patch
+BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
+BuildRequires:	openssl-devel
+BuildRequires:	zlib-devel
 
 # Test suite requirements - we run the OpenSSH server and try to connect to it
-BuildRequires:  openssh-server
+BuildRequires:	openssh-server
 # We use matchpathcon to get the correct SELinux context for the ssh server
 # initialization script so that it can transition correctly in an SELinux
 # environment; matchpathcon is only available from FC-4 and moved from the
 # libselinux to libselinux-utils package in F-10
 %if 0%{?fedora} >= 4 || 0%{?rhel} >= 5
-BuildRequires:  /usr/sbin/matchpathcon selinux-policy-targeted
+BuildRequires:	/usr/sbin/matchpathcon selinux-policy-targeted
 %endif
 
 %description
@@ -36,25 +36,25 @@ Internet Drafts: SECSH-TRANS(22), SECSH-USERAUTH(25),
 SECSH-CONNECTION(23), SECSH-ARCH(20), SECSH-FILEXFER(06)*,
 SECSH-DHGEX(04), and SECSH-NUMBERS(10).
 
-%package        devel
-Summary:        Development files for libssh2
-Group:          Development/Libraries
-Requires:       %{name} = %{version}-%{release}
-Requires:       pkgconfig
+%package	devel
+Summary:	Development files for libssh2
+Group:		Development/Libraries
+Requires:	%{name} = %{version}-%{release}
+Requires:	pkgconfig
 
-%description    devel
+%description	devel
 The libssh2-devel package contains libraries and header files for
 developing applications that use libssh2.
 
-%package        docs
-Summary:        Documentation for libssh2
-Group:          Development/Libraries
-Requires:       %{name} = %{version}-%{release}
+%package	docs
+Summary:	Documentation for libssh2
+Group:		Development/Libraries
+Requires:	%{name} = %{version}-%{release}
 %if %{noarch_docs_package}
-BuildArch:      noarch
+BuildArch:	noarch
 %endif
 
-%description    docs
+%description	docs
 The libssh2-docs package contains man pages and examples for
 developing applications that use libssh2.
 
@@ -90,8 +90,8 @@ mv -v example/Makefile example/Makefile.%{_arch}
 # The SSH test will fail if we don't have /dev/tty, as is the case in some
 # versions of mock (#672713)
 if [ ! -c /dev/tty ]; then
-        echo Skipping SSH test due to missing /dev/tty
-        echo "exit 0" > tests/ssh2.sh
+	echo Skipping SSH test due to missing /dev/tty
+	echo "exit 0" > tests/ssh2.sh
 fi
 # Apparently it fails in the sparc buildsystem too
 %ifarch %{sparc}
@@ -134,6 +134,7 @@ rm -rf %{buildroot}
   in the test suite
 - skip the ssh test if /dev/tty isn't present, as in some versions of mock
 - make the %%files list more explicit
+- use tabs for indentation
 
 * Fri Jan 13 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> 1.3.0-2
 - rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
