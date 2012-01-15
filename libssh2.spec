@@ -9,7 +9,7 @@
 
 Name:		libssh2
 Version:	1.3.0
-Release:	3%{?dist}
+Release:	4%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
@@ -93,8 +93,8 @@ if [ ! -c /dev/tty ]; then
 	echo Skipping SSH test due to missing /dev/tty
 	echo "exit 0" > tests/ssh2.sh
 fi
-# Apparently it fails in the sparc buildsystem too
-%ifarch %{sparc}
+# Apparently it fails in the sparc and arm buildsystem too
+%ifarch %{sparc} %{arm}
 echo Skipping SSH test on sparc
 echo "exit 0" > tests/ssh2.sh
 %endif
@@ -128,6 +128,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Sun Jan 15 2012 Peter Robinson <pbrobinson@fedoraproject.org> 1.3.0-4
+- Disable some tests on ARM
+
 * Fri Jan 13 2012 Paul Howarth <paul@city-fan.org> 1.3.0-3
 - make docs package noarch where possible
 - example includes arch-specific bits, so move to devel package
