@@ -93,9 +93,9 @@ if [ ! -c /dev/tty ]; then
 	echo Skipping SSH test due to missing /dev/tty
 	echo "exit 0" > tests/ssh2.sh
 fi
-# Apparently it fails in the sparc and arm buildsystem too
+# Apparently it fails in the sparc and arm buildsystems too
 %ifarch %{sparc} %{arm}
-echo Skipping SSH test on sparc
+echo Skipping SSH test on sparc/arm
 echo "exit 0" > tests/ssh2.sh
 %endif
 make -C tests check
@@ -129,7 +129,7 @@ rm -rf %{buildroot}
 
 %changelog
 * Sun Jan 15 2012 Peter Robinson <pbrobinson@fedoraproject.org> 1.3.0-4
-- Disable some tests on ARM
+- skip the ssh test on ARM too
 
 * Fri Jan 13 2012 Paul Howarth <paul@city-fan.org> 1.3.0-3
 - make docs package noarch where possible
