@@ -8,17 +8,19 @@
 %endif
 
 Name:		libssh2
-Version:	1.3.0
-Release:	4%{?dist}
+Version:	1.4.0
+Release:	1%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
 URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
 Patch0:		libssh2-1.2.9-utf8.patch
+Patch1:		libssh2-1.4.0-c4a0e0.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
+BuildRequires:	/usr/bin/man
 
 # Test suite requirements - we run the OpenSSH server and try to connect to it
 BuildRequires:	openssh-server
@@ -63,6 +65,9 @@ developing applications that use libssh2.
 
 # Make sure things are UTF-8...
 %patch0 -p1
+
+# Fix undefined reference to _libssh_error in libgcrypt (upstream patch)
+%patch1 -p1
 
 # Make sshd transition appropriately if building in an SELinux environment
 chcon $(/usr/sbin/matchpathcon -n /etc/rc.d/init.d/sshd) tests/ssh2.sh || :
@@ -128,6 +133,25 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Wed Feb  1 2012 Paul Howarth <paul@city-fan.org> 1.4.0-1
+- update to 1.4.0
+  - added libssh2_session_supported_algs()
+  - added libssh2_session_banner_get()
+  - added libssh2_sftp_get_channel()
+  - libssh2.h: bump the default window size to 256K
+  - sftp-seek: clear EOF flag
+  - userauth: provide more informations if ssh pub key extraction fails
+  - ssh2_exec: skip error outputs for EAGAIN
+  - LIBSSH2_SFTP_PACKET_MAXLEN: increase to 80000
+  - knownhost_check(): don't dereference ext if NULL is passed
+  - knownhost_add: avoid dereferencing uninitialized memory on error path
+  - OpenSSL EVP: fix threaded use of structs
+  - _libssh2_channel_read: react on errors from receive_window_adjust
+  - sftp_read: cap the read ahead maximum amount
+  - _libssh2_channel_read: fix non-blocking window adjusting 
+- add upstream patch fixing undefined function reference in libgcrypt backend
+- BR: /usr/bin/man for test suite
+
 * Sun Jan 15 2012 Peter Robinson <pbrobinson@fedoraproject.org> 1.3.0-4
 - skip the ssh test on ARM too
 
