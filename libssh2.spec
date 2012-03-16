@@ -1,6 +1,6 @@
 Name:           libssh2
 Version:        1.2.7
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        A library implementing the SSH2 protocol
 
 Group:          System Environment/Libraries
@@ -8,6 +8,7 @@ License:        BSD
 URL:            http://www.libssh2.org
 Source0:        http://libssh2.org/download/libssh2-%{version}.tar.gz
 Patch0:         libssh2-1.2.7-bz802382.patch
+Patch1:         libssh2-1.2.7-bz804155.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  openssl-devel
@@ -48,6 +49,9 @@ developing applications that use %{name}.
 
 # avoid a crash of curl when downloading large files using SFTP (#802382)
 %patch0 -p1
+
+# fix libssh2 failing key re-exchange when write channel is saturated (#804155)
+%patch1 -p1
 
 # make sure things are UTF-8...
 for i in ChangeLog NEWS ; do
@@ -116,10 +120,13 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/*
 
 %changelog
+* Fri Mar 16 2012 Paul Howarth <paul@city-fan.org> 1.2.7-4
+- fix libssh2 failing key re-exchange when write channel is saturated (#804155)
+
 * Mon Mar 12 2012 Kamil Dudka <kdudka@redhat.com> 1.2.7-3
 - avoid a crash of curl when downloading large files using SFTP (#802382)
 
-* Sat Jun 25 2011 Dennis Gilmore <dennis@ausil.us> - 1.2.7-2
+* Sat Jun 25 2011 Dennis Gilmore <dennis@ausil.us> 1.2.7-2
 - sshd/loopback test fails in the sparc buildsystem
 
 * Tue Oct 12 2010 Kamil Dudka <kdudka@redhat.com> 1.2.7-1
