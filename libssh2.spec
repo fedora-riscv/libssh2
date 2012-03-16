@@ -9,7 +9,7 @@
 
 Name:		libssh2
 Version:	1.4.0
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
@@ -17,6 +17,7 @@ URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
 Patch0:		libssh2-1.2.9-utf8.patch
 Patch1:		libssh2-1.4.0-c4a0e0.patch
+Patch2:		libssh2-1.4.0-cc4f9d.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
@@ -69,6 +70,10 @@ developing applications that use libssh2.
 # Fix undefined reference to _libssh_error in libgcrypt (upstream patch)
 %patch1 -p1
 
+# Fix libssh2 failing key re-exchange when write channel is saturated
+# (upstream patch, #804156)
+%patch2 -p1
+
 # Make sshd transition appropriately if building in an SELinux environment
 chcon $(/usr/sbin/matchpathcon -n /etc/rc.d/init.d/sshd) tests/ssh2.sh || :
 chcon -R $(/usr/sbin/matchpathcon -n /etc) tests/etc || :
@@ -113,18 +118,15 @@ rm -rf %{buildroot}
 %postun -p /sbin/ldconfig
 
 %files
-%defattr(-,root,root,-)
 %doc AUTHORS ChangeLog COPYING README NEWS
 %{_libdir}/libssh2.so.1
 %{_libdir}/libssh2.so.1.*
 
 %files docs
-%defattr(-,root,root,-)
 %doc HACKING
 %{_mandir}/man3/libssh2_*.3*
 
 %files devel
-%defattr(-,root,root,-)
 %doc example/
 %{_includedir}/libssh2.h
 %{_includedir}/libssh2_publickey.h
@@ -133,6 +135,10 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Fri Mar 16 2012 Paul Howarth <paul@city-fan.org> 1.4.0-2
+- fix libssh2 failing key re-exchange when write channel is saturated (#804156)
+- drop %%defattr, redundant since rpm 4.4
+
 * Wed Feb  1 2012 Paul Howarth <paul@city-fan.org> 1.4.0-1
 - update to 1.4.0
   - added libssh2_session_supported_algs()
