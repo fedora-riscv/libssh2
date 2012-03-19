@@ -26,7 +26,7 @@ index 40818c0..481982c 100644
  
  #include <openssl/aes.h>
  #include <openssl/evp.h>
-@@ -362,6 +362,8 @@ void _libssh2_init_aes_ctr(void)
+@@ -358,6 +358,8 @@ void _libssh2_init_aes_ctr(void)
      _libssh2_EVP_aes_256_ctr();
  }
  

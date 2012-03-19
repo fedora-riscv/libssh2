@@ -9,7 +9,7 @@
 
 Name:		libssh2
 Version:	1.4.0
-Release:	3%{?dist}
+Release:	4%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
@@ -19,6 +19,7 @@ Patch0:		libssh2-1.2.9-utf8.patch
 Patch1:		libssh2-1.4.0-c4a0e0.patch
 Patch2:		libssh2-1.4.0-cc4f9d.patch
 Patch3:		libssh2-1.4.0-f4f229.patch
+Patch4:		libssh2-1.4.0-fed075.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
@@ -77,6 +78,9 @@ developing applications that use libssh2.
 
 # Don't try to use openssl's AES-CTR functions (upstream patch)
 %patch3 -p1
+
+# Don't ignore transport errors in channel_write (upstream patch, #804150)
+%patch4 -p1
 
 # Make sshd transition appropriately if building in an SELinux environment
 chcon $(/usr/sbin/matchpathcon -n /etc/rc.d/init.d/sshd) tests/ssh2.sh || :
@@ -139,6 +143,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Mon Mar 19 2012 Kamil Dudka <kdudka@redhat.com> 1.4.0-4
+- Don't ignore transport errors when writing to channel (#804150)
+
 * Sun Mar 18 2012 Paul Howarth <paul@city-fan.org> 1.4.0-3
 - Don't try to use openssl's AES-CTR functions
   (http://www.libssh2.org/mail/libssh2-devel-archive-2012-03/0111.shtml)

@@ -1,6 +1,6 @@
 --- libssh2/NEWS
 +++ libssh2/NEWS
-@@ -2507,7 +2507,7 @@
+@@ -2886,7 +2886,7 @@
  - support arcfour128 cipher per RFC 4345
  
  Daniel Stenberg (21 Oct 2009)
