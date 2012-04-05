@@ -8,18 +8,14 @@
 %endif
 
 Name:		libssh2
-Version:	1.4.0
-Release:	4%{?dist}
+Version:	1.4.1
+Release:	1%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
 URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
 Patch0:		libssh2-1.2.9-utf8.patch
-Patch1:		libssh2-1.4.0-c4a0e0.patch
-Patch2:		libssh2-1.4.0-cc4f9d.patch
-Patch3:		libssh2-1.4.0-f4f229.patch
-Patch4:		libssh2-1.4.0-fed075.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
@@ -68,19 +64,6 @@ developing applications that use libssh2.
 
 # Make sure things are UTF-8...
 %patch0 -p1
-
-# Fix undefined reference to _libssh_error in libgcrypt (upstream patch)
-%patch1 -p1
-
-# Fix libssh2 failing key re-exchange when write channel is saturated
-# (upstream patch, #804156)
-%patch2 -p1
-
-# Don't try to use openssl's AES-CTR functions (upstream patch)
-%patch3 -p1
-
-# Don't ignore transport errors in channel_write (upstream patch, #804150)
-%patch4 -p1
 
 # Make sshd transition appropriately if building in an SELinux environment
 chcon $(/usr/sbin/matchpathcon -n /etc/rc.d/init.d/sshd) tests/ssh2.sh || :
@@ -143,6 +126,25 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Thu Apr  5 2012 Paul Howarth <paul@city-fan.org> 1.4.1-1
+- Update to 1.4.1
+  - Build error with gcrypt backend
+  - Always do "forced" window updates to avoid corner case stalls
+  - aes: the init function fails when OpenSSL has AES support
+  - transport_send: finish in-progress key exchange before sending data
+  - channel_write: acknowledge transport errors
+  - examples/x11.c: make sure sizeof passed to read operation is correct
+  - examples/x11.c: fix suspicious sizeof usage
+  - sftp_packet_add: verify the packet before accepting it
+  - SFTP: preserve the original error code more
+  - sftp_packet_read: adjust window size as necessary
+  - Use safer snprintf rather then sprintf in several places
+  - Define and use LIBSSH2_INVALID_SOCKET instead of INVALID_SOCKET
+  - sftp_write: cannot return acked data *and* EAGAIN
+  - sftp_read: avoid data *and* EAGAIN
+  - libssh2.h: add missing prototype for libssh2_session_banner_set()
+- Drop upstream patches now included in release tarball
+
 * Mon Mar 19 2012 Kamil Dudka <kdudka@redhat.com> 1.4.0-4
 - Don't ignore transport errors when writing to channel (#804150)
 
