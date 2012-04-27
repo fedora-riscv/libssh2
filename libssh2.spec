@@ -9,7 +9,7 @@
 
 Name:		libssh2
 Version:	1.4.1
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
@@ -85,7 +85,7 @@ rm -rf example/.deps
 find example/ -type f '(' -name '*.am' -o -name '*.in' ')' -exec rm -v {} \;
 
 # avoid multilib conflict on libssh2-devel
-mv -v example/Makefile example/Makefile.%{_arch}
+mv -v example example.%{_arch}
 
 %check
 # The SSH test will fail if we don't have /dev/tty, as is the case in some
@@ -118,7 +118,7 @@ rm -rf %{buildroot}
 %{_mandir}/man3/libssh2_*.3*
 
 %files devel
-%doc example/
+%doc example.%{_arch}/
 %{_includedir}/libssh2.h
 %{_includedir}/libssh2_publickey.h
 %{_includedir}/libssh2_sftp.h
@@ -126,6 +126,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Fri Apr 27 2012 Paul Howarth <paul@city-fan.org> 1.4.1-2
+- Fix multi-arch conflict again (#816969)
+
 * Thu Apr  5 2012 Paul Howarth <paul@city-fan.org> 1.4.1-1
 - Update to 1.4.1
   - Build error with gcrypt backend
