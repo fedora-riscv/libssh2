@@ -8,8 +8,8 @@
 %endif
 
 Name:		libssh2
-Version:	1.4.1
-Release:	2%{?dist}
+Version:	1.4.2
+Release:	1%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
@@ -126,6 +126,17 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Sun May 20 2012 Paul Howarth <paul@city-fan.org> 1.4.2-1
+- Update to 1.4.2
+  - Return LIBSSH2_ERROR_SOCKET_DISCONNECT on EOF when reading banner
+  - userauth.c: fread() from public key file to correctly detect any errors
+  - configure.ac: add option to disable build of the example applications
+  - added 'Requires.private:' line to libssh2.pc
+  - SFTP: filter off incoming "zombie" responses
+  - gettimeofday: no need for a replacement under cygwin
+  - SSH_MSG_CHANNEL_REQUEST: default to want_reply
+  - win32/libssh2_config.h: remove hardcoded #define LIBSSH2_HAVE_ZLIB
+
 * Fri Apr 27 2012 Paul Howarth <paul@city-fan.org> 1.4.1-2
 - Fix multi-arch conflict again (#816969)
 
