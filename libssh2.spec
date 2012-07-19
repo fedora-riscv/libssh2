@@ -9,7 +9,7 @@
 
 Name:		libssh2
 Version:	1.4.2
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
@@ -126,6 +126,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Thu Jul 19 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.4.2-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
+
 * Sun May 20 2012 Paul Howarth <paul@city-fan.org> 1.4.2-1
 - Update to 1.4.2
   - Return LIBSSH2_ERROR_SOCKET_DISCONNECT on EOF when reading banner
