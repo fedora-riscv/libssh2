@@ -1,0 +1,304 @@
+From 43b730ce56f010e9d33573fcb020df49798c1ed8 Mon Sep 17 00:00:00 2001
+From: Kamil Dudka <kdudka@redhat.com>
+Date: Mon, 10 Sep 2012 15:32:40 +0200
+Subject: [PATCH 1/4] kex: do not ignore failure of libssh2_md5_init()
+
+The MD5 algorithm is disabled when running in FIPS mode.
+---
+ src/hostkey.c      |    4 +++-
+ src/kex.c          |   13 +++++++++----
+ src/libgcrypt.h    |    6 +++++-
+ src/libssh2_priv.h |    1 +
+ src/openssl.h      |    3 +++
+ 5 files changed, 21 insertions(+), 6 deletions(-)
+
+diff --git a/src/hostkey.c b/src/hostkey.c
+index 53f7479..753563d 100644
+--- a/src/hostkey.c
++++ b/src/hostkey.c
+@@ -429,7 +429,9 @@ libssh2_hostkey_hash(LIBSSH2_SESSION * session, int hash_type)
+     switch (hash_type) {
+ #if LIBSSH2_MD5
+     case LIBSSH2_HOSTKEY_HASH_MD5:
+-        return (char *) session->server_hostkey_md5;
++        return (session->server_hostkey_md5_valid)
++          ? (char *) session->server_hostkey_md5
++          : NULL;
+         break;
+ #endif /* LIBSSH2_MD5 */
+     case LIBSSH2_HOSTKEY_HASH_SHA1:
+diff --git a/src/kex.c b/src/kex.c
+index 0a72cb7..07e717f 100644
+--- a/src/kex.c
++++ b/src/kex.c
+@@ -218,10 +218,15 @@ static int diffie_hellman_sha1(LIBSSH2_SESSION *session,
+         {
+             libssh2_md5_ctx fingerprint_ctx;
+ 
+-            libssh2_md5_init(&fingerprint_ctx);
+-            libssh2_md5_update(fingerprint_ctx, session->server_hostkey,
+-                               session->server_hostkey_len);
+-            libssh2_md5_final(fingerprint_ctx, session->server_hostkey_md5);
++            if (libssh2_md5_init(&fingerprint_ctx)) {
++                libssh2_md5_update(fingerprint_ctx, session->server_hostkey,
++                                   session->server_hostkey_len);
++                libssh2_md5_final(fingerprint_ctx, session->server_hostkey_md5);
++                session->server_hostkey_md5_valid = TRUE;
++            }
++            else {
++                session->server_hostkey_md5_valid = FALSE;
++            }
+         }
+ #ifdef LIBSSH2DEBUG
+         {
+diff --git a/src/libgcrypt.h b/src/libgcrypt.h
+index 04516e5..1f0276e 100644
+--- a/src/libgcrypt.h
++++ b/src/libgcrypt.h
+@@ -68,7 +68,11 @@
+   gcry_md_hash_buffer (GCRY_MD_SHA1, out, message, len)
+ 
+ #define libssh2_md5_ctx gcry_md_hd_t
+-#define libssh2_md5_init(ctx) gcry_md_open (ctx,  GCRY_MD_MD5, 0);
++
++/* returns 0 in case of failure */
++#define libssh2_md5_init(ctx) \
++  (GPG_ERR_NO_ERROR == gcry_md_open (ctx,  GCRY_MD_MD5, 0))
++
+ #define libssh2_md5_update(ctx, data, len) gcry_md_write (ctx, data, len)
+ #define libssh2_md5_final(ctx, out) \
+   memcpy (out, gcry_md_read (ctx, 0), MD5_DIGEST_LENGTH), gcry_md_close (ctx)
+diff --git a/src/libssh2_priv.h b/src/libssh2_priv.h
+index 23fbc65..196864d 100644
+--- a/src/libssh2_priv.h
++++ b/src/libssh2_priv.h
+@@ -597,6 +597,7 @@ struct _LIBSSH2_SESSION
+     uint32_t server_hostkey_len;
+ #if LIBSSH2_MD5
+     unsigned char server_hostkey_md5[MD5_DIGEST_LENGTH];
++    int server_hostkey_md5_valid;
+ #endif                          /* ! LIBSSH2_MD5 */
+     unsigned char server_hostkey_sha1[SHA_DIGEST_LENGTH];
+ 
+diff --git a/src/openssl.h b/src/openssl.h
+index 6d2aeed..4835ab6 100644
+--- a/src/openssl.h
++++ b/src/openssl.h
+@@ -113,7 +113,10 @@
+ void libssh2_sha1(const unsigned char *message, unsigned long len, unsigned char *out);
+ 
+ #define libssh2_md5_ctx EVP_MD_CTX
++
++/* returns 0 in case of failure */
+ #define libssh2_md5_init(ctx) EVP_DigestInit(ctx, EVP_get_digestbyname("md5"))
++
+ #define libssh2_md5_update(ctx, data, len) EVP_DigestUpdate(&(ctx), data, len)
+ #define libssh2_md5_final(ctx, out) EVP_DigestFinal(&(ctx), out, NULL)
+ void libssh2_md5(const unsigned char *message, unsigned long len, unsigned char *out);
+-- 
+1.7.1
+
+
+From bfbb5a4dc75c04b3532063c03b80796dd6d69da4 Mon Sep 17 00:00:00 2001
+From: Kamil Dudka <kdudka@redhat.com>
+Date: Mon, 10 Sep 2012 15:59:16 +0200
+Subject: [PATCH 2/4] openssl: do not ignore failure of EVP_CipherInit()
+
+---
+ src/openssl.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
+
+diff --git a/src/openssl.c b/src/openssl.c
+index 481982c..c61cb0e 100644
+--- a/src/openssl.c
++++ b/src/openssl.c
+@@ -175,8 +175,7 @@ _libssh2_cipher_init(_libssh2_cipher_ctx * h,
+                      unsigned char *iv, unsigned char *secret, int encrypt)
+ {
+     EVP_CIPHER_CTX_init(h);
+-    EVP_CipherInit(h, algo(), secret, iv, encrypt);
+-    return 0;
++    return !EVP_CipherInit(h, algo(), secret, iv, encrypt);
+ }
+ 
+ int
+-- 
+1.7.1
+
+
+From 5d567faecce45a891de2a3e10fad7b221a4f6540 Mon Sep 17 00:00:00 2001
+From: Kamil Dudka <kdudka@redhat.com>
+Date: Tue, 11 Sep 2012 09:33:34 +0200
+Subject: [PATCH 3/4] crypt: use hard-wired cipher block sizes consistently
+
+---
+ src/crypt.c        |    8 +++++---
+ src/crypto.h       |    2 +-
+ src/libgcrypt.c    |    8 +-------
+ src/libssh2_priv.h |    2 +-
+ src/openssl.c      |    7 +------
+ src/transport.c    |    3 ++-
+ 6 files changed, 11 insertions(+), 19 deletions(-)
+
+diff --git a/src/crypt.c b/src/crypt.c
+index 93d99c4..931ae8b 100644
+--- a/src/crypt.c
++++ b/src/crypt.c
+@@ -96,11 +96,12 @@ crypt_init(LIBSSH2_SESSION * session,
+ 
+ static int
+ crypt_encrypt(LIBSSH2_SESSION * session, unsigned char *block,
+-                 void **abstract)
++              size_t blocksize, void **abstract)
+ {
+     struct crypt_ctx *cctx = *(struct crypt_ctx **) abstract;
+     (void) session;
+-    return _libssh2_cipher_crypt(&cctx->h, cctx->algo, cctx->encrypt, block);
++    return _libssh2_cipher_crypt(&cctx->h, cctx->algo, cctx->encrypt, block,
++                                 blocksize);
+ }
+ 
+ static int
+@@ -248,7 +249,8 @@ crypt_init_arcfour128(LIBSSH2_SESSION * session,
+         unsigned char block[8];
+         size_t discard = 1536;
+         for (; discard; discard -= 8)
+-            _libssh2_cipher_crypt(&cctx->h, cctx->algo, cctx->encrypt, block);
++            _libssh2_cipher_crypt(&cctx->h, cctx->algo, cctx->encrypt, block,
++                                  method->blocksize);
+     }
+ 
+     return rc;
+diff --git a/src/crypto.h b/src/crypto.h
+index 8cf34f5..5dc5931 100644
+--- a/src/crypto.h
++++ b/src/crypto.h
+@@ -103,7 +103,7 @@ int _libssh2_cipher_init(_libssh2_cipher_ctx * h,
+ 
+ int _libssh2_cipher_crypt(_libssh2_cipher_ctx * ctx,
+                           _libssh2_cipher_type(algo),
+-                          int encrypt, unsigned char *block);
++                          int encrypt, unsigned char *block, size_t blocksize);
+ 
+ int _libssh2_pub_priv_keyfile(LIBSSH2_SESSION *session,
+                               unsigned char **method,
+diff --git a/src/libgcrypt.c b/src/libgcrypt.c
+index 5c2787b..29770c7 100644
+--- a/src/libgcrypt.c
++++ b/src/libgcrypt.c
+@@ -553,17 +553,11 @@ _libssh2_cipher_init(_libssh2_cipher_ctx * h,
+ int
+ _libssh2_cipher_crypt(_libssh2_cipher_ctx * ctx,
+                       _libssh2_cipher_type(algo),
+-                      int encrypt, unsigned char *block)
++                      int encrypt, unsigned char *block, size_t blklen)
+ {
+     int cipher = _libssh2_gcry_cipher (algo);
+-    size_t blklen = gcry_cipher_get_algo_blklen(cipher);
+     int ret;
+ 
+-    if (blklen == 1) {
+-/* Hack for arcfour. */
+-        blklen = 8;
+-    }
+-
+     if (encrypt) {
+         ret = gcry_cipher_encrypt(*ctx, block, blklen, block, blklen);
+     } else {
+diff --git a/src/libssh2_priv.h b/src/libssh2_priv.h
+index 196864d..4ec9f73 100644
+--- a/src/libssh2_priv.h
++++ b/src/libssh2_priv.h
+@@ -883,7 +883,7 @@ struct _LIBSSH2_CRYPT_METHOD
+                  int *free_iv, unsigned char *secret, int *free_secret,
+                  int encrypt, void **abstract);
+     int (*crypt) (LIBSSH2_SESSION * session, unsigned char *block,
+-                  void **abstract);
++                  size_t blocksize, void **abstract);
+     int (*dtor) (LIBSSH2_SESSION * session, void **abstract);
+ 
+       _libssh2_cipher_type(algo);
+diff --git a/src/openssl.c b/src/openssl.c
+index c61cb0e..8643591 100644
+--- a/src/openssl.c
++++ b/src/openssl.c
+@@ -181,18 +181,13 @@ _libssh2_cipher_init(_libssh2_cipher_ctx * h,
+ int
+ _libssh2_cipher_crypt(_libssh2_cipher_ctx * ctx,
+                       _libssh2_cipher_type(algo),
+-                      int encrypt, unsigned char *block)
++                      int encrypt, unsigned char *block, size_t blocksize)
+ {
+-    int blocksize = ctx->cipher->block_size;
+     unsigned char buf[EVP_MAX_BLOCK_LENGTH];
+     int ret;
+     (void) algo;
+     (void) encrypt;
+ 
+-    if (blocksize == 1) {
+-/* Hack for arcfour. */
+-        blocksize = 8;
+-    }
+     ret = EVP_Cipher(ctx, buf, block, blocksize);
+     if (ret == 1) {
+         memcpy(block, buf, blocksize);
+diff --git a/src/transport.c b/src/transport.c
+index 15425b9..b4ec037 100644
+--- a/src/transport.c
++++ b/src/transport.c
+@@ -139,7 +139,7 @@ decrypt(LIBSSH2_SESSION * session, unsigned char *source,
+     assert((len % blocksize) == 0);
+ 
+     while (len >= blocksize) {
+-        if (session->remote.crypt->crypt(session, source,
++        if (session->remote.crypt->crypt(session, source, blocksize,
+                                          &session->remote.crypt_abstract)) {
+             LIBSSH2_FREE(session, p->payload);
+             return LIBSSH2_ERROR_DECRYPT;
+@@ -846,6 +846,7 @@ int _libssh2_transport_send(LIBSSH2_SESSION *session,
+         for(i = 0; i < packet_length; i += session->local.crypt->blocksize) {
+             unsigned char *ptr = &p->outbuf[i];
+             if (session->local.crypt->crypt(session, ptr,
++                                            session->local.crypt->blocksize,
+                                             &session->local.crypt_abstract))
+                 return LIBSSH2_ERROR_ENCRYPT;     /* encryption failure */
+         }
+-- 
+1.7.1
+
+
+From 9f6fd5af8282ef82c0ff8d89cf9ebc121bb35b59 Mon Sep 17 00:00:00 2001
+From: Kamil Dudka <kdudka@redhat.com>
+Date: Tue, 11 Sep 2012 09:02:31 +0200
+Subject: [PATCH 4/4] Revert "aes: the init function fails when OpenSSL has AES support"
+
+This partially reverts commit f4f2298ef3635acd031cc2ee0e71026cdcda5864.
+
+We need to use the EVP_aes_???_ctr() functions in FIPS mode.
+---
+ src/openssl.h |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
+
+diff --git a/src/openssl.h b/src/openssl.h
+index 4835ab6..6f21a1a 100644
+--- a/src/openssl.h
++++ b/src/openssl.h
+@@ -151,9 +151,15 @@ void libssh2_md5(const unsigned char *message, unsigned long len, unsigned char
+ #define _libssh2_cipher_aes256 EVP_aes_256_cbc
+ #define _libssh2_cipher_aes192 EVP_aes_192_cbc
+ #define _libssh2_cipher_aes128 EVP_aes_128_cbc
++#ifdef HAVE_EVP_AES_128_CTR
++#define _libssh2_cipher_aes128ctr EVP_aes_128_ctr
++#define _libssh2_cipher_aes192ctr EVP_aes_192_ctr
++#define _libssh2_cipher_aes256ctr EVP_aes_256_ctr
++#else
+ #define _libssh2_cipher_aes128ctr _libssh2_EVP_aes_128_ctr
+ #define _libssh2_cipher_aes192ctr _libssh2_EVP_aes_192_ctr
+ #define _libssh2_cipher_aes256ctr _libssh2_EVP_aes_256_ctr
++#endif
+ #define _libssh2_cipher_blowfish EVP_bf_cbc
+ #define _libssh2_cipher_arcfour EVP_rc4
+ #define _libssh2_cipher_cast5 EVP_cast5_cbc
+-- 
+1.7.1
+

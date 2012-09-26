@@ -9,13 +9,14 @@
 
 Name:		libssh2
 Version:	1.4.2
-Release:	2%{?dist}
+Release:	3%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
 URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
 Patch0:		libssh2-1.2.9-utf8.patch
+Patch1:		libssh2-1.4.2-fips.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
@@ -64,6 +65,9 @@ developing applications that use libssh2.
 
 # Make sure things are UTF-8...
 %patch0 -p1
+
+# Make sure libssh2 works in FIPS mode...
+%patch1 -p1
 
 # Make sshd transition appropriately if building in an SELinux environment
 chcon $(/usr/sbin/matchpathcon -n /etc/rc.d/init.d/sshd) tests/ssh2.sh || :
@@ -126,6 +130,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Wed Sep 26 2012 Kamil Dudka <kdudka@redhat.com> 1.4.2-3
+- fix basic functionality of libssh2 in FIPS mode
+
 * Thu Jul 19 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.4.2-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
 
