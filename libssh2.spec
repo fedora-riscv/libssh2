@@ -15,7 +15,7 @@ Group:		System Environment/Libraries
 License:	BSD
 URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
-Patch0:		libssh2-1.2.9-utf8.patch
+Patch0:		libssh2-1.4.2-utf8.patch
 Patch1:		libssh2-1.4.2-fips.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
 BuildRequires:	openssl-devel

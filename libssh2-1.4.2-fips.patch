@@ -255,7 +255,7 @@ index 15425b9..b4ec037 100644
                                           &session->remote.crypt_abstract)) {
              LIBSSH2_FREE(session, p->payload);
              return LIBSSH2_ERROR_DECRYPT;
-@@ -846,6 +846,7 @@ int _libssh2_transport_send(LIBSSH2_SESSION *session,
+@@ -834,6 +834,7 @@ int _libssh2_transport_send(LIBSSH2_SESSION *session,
          for(i = 0; i < packet_length; i += session->local.crypt->blocksize) {
              unsigned char *ptr = &p->outbuf[i];
              if (session->local.crypt->crypt(session, ptr,
