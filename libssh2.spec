@@ -28,7 +28,7 @@ BuildRequires:	openssh-server
 # initialization script so that it can transition correctly in an SELinux
 # environment; matchpathcon is only available from FC-4 and moved from the
 # libselinux to libselinux-utils package in F-10
-%if 0%{?fedora} >= 4 || 0%{?rhel} >= 5
+%if (0%{?fedora} >= 4 || 0%{?rhel} >= 5) && !(0%{?fedora} >=17 || 0%{?rhel} >=7)
 BuildRequires:	/usr/sbin/matchpathcon selinux-policy-targeted
 %endif
 
@@ -70,9 +70,11 @@ developing applications that use libssh2.
 %patch1 -p1
 
 # Make sshd transition appropriately if building in an SELinux environment
+%if !(0%{?fedora} >= 17 || 0%{?rhel} >= 7)
 chcon $(/usr/sbin/matchpathcon -n /etc/rc.d/init.d/sshd) tests/ssh2.sh || :
 chcon -R $(/usr/sbin/matchpathcon -n /etc) tests/etc || :
 chcon $(/usr/sbin/matchpathcon -n /etc/ssh/ssh_host_key) tests/etc/{host,user} || :
+%endif
 
 %build
 %configure --disable-static --enable-shared
@@ -132,6 +134,7 @@ rm -rf %{buildroot}
 %changelog
 * Wed Sep 26 2012 Kamil Dudka <kdudka@redhat.com> 1.4.2-3
 - fix basic functionality of libssh2 in FIPS mode
+- skip SELinux-related quirks on recent distros to prevent a test-suite failure
 
 * Thu Jul 19 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.4.2-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
