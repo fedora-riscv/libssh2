@@ -1,0 +1,1019 @@
+From b31e35aba6fa2e39f7aa91c21400722afe8d675e Mon Sep 17 00:00:00 2001
+From: Kamil Dudka <kdudka@redhat.com>
+Date: Mon, 22 Oct 2012 13:29:27 +0200
+Subject: [PATCH] examples: use stderr for messages, stdout for data
+
+Reported by: Karel Srot
+Bug: https://bugzilla.redhat.com/867462
+---
+ example/direct_tcpip.c        |   19 ++++++++-------
+ example/scp_nonblock.c        |    2 +-
+ example/scp_write_nonblock.c  |    2 +-
+ example/sftp.c                |   49 +++++++++++++++++++++-------------------
+ example/sftp_RW_nonblock.c    |   14 ++++++------
+ example/sftp_append.c         |   18 +++++++-------
+ example/sftp_mkdir.c          |   12 +++++-----
+ example/sftp_mkdir_nonblock.c |   12 +++++-----
+ example/sftp_nonblock.c       |    4 +-
+ example/sftp_write.c          |   14 ++++++------
+ example/sftp_write_nonblock.c |   16 ++++++------
+ example/sftp_write_sliding.c  |   16 ++++++------
+ example/sftpdir.c             |   12 +++++-----
+ example/sftpdir_nonblock.c    |    8 +++---
+ example/ssh2.c                |   26 +++++++++++----------
+ example/ssh2_agent.c          |   14 ++++++------
+ example/ssh2_echo.c           |    2 +-
+ example/ssh2_exec.c           |    4 +-
+ example/subsystem_netconf.c   |   20 ++++++++--------
+ example/tcpip-forward.c       |   25 +++++++++++----------
+ 20 files changed, 148 insertions(+), 141 deletions(-)
+
+diff --git a/example/direct_tcpip.c b/example/direct_tcpip.c
+index 6aa9845..e530199 100644
+--- a/example/direct_tcpip.c
++++ b/example/direct_tcpip.c
+@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
+ 
+     /* check what authentication methods are available */
+     userauthlist = libssh2_userauth_list(session, username, strlen(username));
+-    printf("Authentication methods: %s\n", userauthlist);
++    fprintf(stderr, "Authentication methods: %s\n", userauthlist);
+     if (strstr(userauthlist, "password"))
+         auth |= AUTH_PASSWORD;
+     if (strstr(userauthlist, "publickey"))
+@@ -157,12 +157,12 @@ int main(int argc, char *argv[])
+     } else if (auth & AUTH_PUBLICKEY) {
+         if (libssh2_userauth_publickey_fromfile(session, username, keyfile1,
+                                                 keyfile2, password)) {
+-            printf("\tAuthentication by public key failed!\n");
++            fprintf(stderr, "\tAuthentication by public key failed!\n");
+             goto shutdown;
+         }
+-        printf("\tAuthentication by public key succeeded.\n");
++        fprintf(stderr, "\tAuthentication by public key succeeded.\n");
+     } else {
+-        printf("No supported authentication methods found!\n");
++        fprintf(stderr, "No supported authentication methods found!\n");
+         goto shutdown;
+     }
+ 
+@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
+         goto shutdown;
+     }
+ 
+-    printf("Waiting for TCP connection on %s:%d...\n",
++    fprintf(stderr, "Waiting for TCP connection on %s:%d...\n",
+         inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
+ 
+     forwardsock = accept(listensock, (struct sockaddr *)&sin, &sinlen);
+@@ -197,8 +197,8 @@ int main(int argc, char *argv[])
+     shost = inet_ntoa(sin.sin_addr);
+     sport = ntohs(sin.sin_port);
+ 
+-    printf("Forwarding connection from %s:%d here to remote %s:%d\n", shost,
+-        sport, remote_desthost, remote_destport);
++    fprintf(stderr, "Forwarding connection from %s:%d here to remote %s:%d\n",
++        shost, sport, remote_desthost, remote_destport);
+ 
+     channel = libssh2_channel_direct_tcpip_ex(session, remote_desthost,
+         remote_destport, shost, sport);
+@@ -228,7 +228,8 @@ int main(int argc, char *argv[])
+                 perror("read");
+                 goto shutdown;
+             } else if (0 == len) {
+-                printf("The client at %s:%d disconnected!\n", shost, sport);
++                fprintf(stderr, "The client at %s:%d disconnected!\n", shost,
++                    sport);
+                 goto shutdown;
+             }
+             wr = 0;
+@@ -259,7 +260,7 @@ int main(int argc, char *argv[])
+                 wr += i;
+             }
+             if (libssh2_channel_eof(channel)) {
+-                printf("The server at %s:%d disconnected!\n",
++                fprintf(stderr, "The server at %s:%d disconnected!\n",
+                     remote_desthost, remote_destport);
+                 goto shutdown;
+             }
+diff --git a/example/scp_nonblock.c b/example/scp_nonblock.c
+index 867d851..5d636c0 100644
+--- a/example/scp_nonblock.c
++++ b/example/scp_nonblock.c
+@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
+     gettimeofday(&end, NULL);
+ 
+     time_ms = tvdiff(end, start);
+-    printf("Got %d bytes in %ld ms = %.1f bytes/sec spin: %d\n", total,
++    fprintf(stderr, "Got %d bytes in %ld ms = %.1f bytes/sec spin: %d\n", total,
+            time_ms, total/(time_ms/1000.0), spin );
+ 
+     libssh2_channel_free(channel);
+diff --git a/example/scp_write_nonblock.c b/example/scp_write_nonblock.c
+index 9dfbd4e..0ac0f69 100644
+--- a/example/scp_write_nonblock.c
++++ b/example/scp_write_nonblock.c
+@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
+ 
+     duration = (int)(time(NULL)-start);
+ 
+-    printf("%ld bytes in %d seconds makes %.1f bytes/sec\n",
++    fprintf(stderr, "%ld bytes in %d seconds makes %.1f bytes/sec\n",
+            total, duration, total/(double)duration);
+ 
+     fprintf(stderr, "Sending EOF\n");
+diff --git a/example/sftp.c b/example/sftp.c
+index e69b3c3..88ceba2 100644
+--- a/example/sftp.c
++++ b/example/sftp.c
+@@ -55,24 +55,24 @@ static void kbd_callback(const char *name, int name_len,
+     char buf[1024];
+     (void)abstract;
+ 
+-    printf("Performing keyboard-interactive authentication.\n");
++    fprintf(stderr, "Performing keyboard-interactive authentication.\n");
+ 
+-    printf("Authentication name: '");
+-    fwrite(name, 1, name_len, stdout);
+-    printf("'\n");
++    fprintf(stderr, "Authentication name: '");
++    fwrite(name, 1, name_len, stderr);
++    fprintf(stderr, "'\n");
+ 
+-    printf("Authentication instruction: '");
+-    fwrite(instruction, 1, instruction_len, stdout);
+-    printf("'\n");
++    fprintf(stderr, "Authentication instruction: '");
++    fwrite(instruction, 1, instruction_len, stderr);
++    fprintf(stderr, "'\n");
+ 
+-    printf("Number of prompts: %d\n\n", num_prompts);
++    fprintf(stderr, "Number of prompts: %d\n\n", num_prompts);
+ 
+     for (i = 0; i < num_prompts; i++) {
+-        printf("Prompt %d from server: '", i);
+-        fwrite(prompts[i].text, 1, prompts[i].length, stdout);
+-        printf("'\n");
++        fprintf(stderr, "Prompt %d from server: '", i);
++        fwrite(prompts[i].text, 1, prompts[i].length, stderr);
++        fprintf(stderr, "'\n");
+ 
+-        printf("Please type response: ");
++        fprintf(stderr, "Please type response: ");
+         fgets(buf, sizeof(buf), stdin);
+         n = strlen(buf);
+         while (n > 0 && strchr("\r\n", buf[n - 1]))
+@@ -82,12 +82,13 @@ static void kbd_callback(const char *name, int name_len,
+         responses[i].text = strdup(buf);
+         responses[i].length = n;
+ 
+-        printf("Response %d from user is '", i);
+-        fwrite(responses[i].text, 1, responses[i].length, stdout);
+-        printf("'\n\n");
++        fprintf(stderr, "Response %d from user is '", i);
++        fwrite(responses[i].text, 1, responses[i].length, stderr);
++        fprintf(stderr, "'\n\n");
+     }
+ 
+-    printf("Done. Sending keyboard-interactive responses to server now.\n");
++    fprintf(stderr,
++        "Done. Sending keyboard-interactive responses to server now.\n");
+ }
+ 
+ 
+@@ -127,7 +128,7 @@ int main(int argc, char *argv[])
+ 
+     rc = libssh2_init (0);
+     if (rc != 0) {
+-        fprintf (stderr, "libssh2 initialization failed (%d)\n", rc);
++        fprintf(stderr, "libssh2 initialization failed (%d)\n", rc);
+         return 1;
+     }
+ 
+@@ -178,7 +179,7 @@ int main(int argc, char *argv[])
+ 
+     /* check what authentication methods are available */
+     userauthlist = libssh2_userauth_list(session, username, strlen(username));
+-    printf("Authentication methods: %s\n", userauthlist);
++    fprintf(stderr, "Authentication methods: %s\n", userauthlist);
+     if (strstr(userauthlist, "password") != NULL) {
+         auth_pw |= 1;
+     }
+@@ -211,21 +212,23 @@ int main(int argc, char *argv[])
+     } else if (auth_pw & 2) {
+         /* Or via keyboard-interactive */
+         if (libssh2_userauth_keyboard_interactive(session, username, &kbd_callback) ) {
+-            printf("\tAuthentication by keyboard-interactive failed!\n");
++            fprintf(stderr,
++                "\tAuthentication by keyboard-interactive failed!\n");
+             goto shutdown;
+         } else {
+-            printf("\tAuthentication by keyboard-interactive succeeded.\n");
++            fprintf(stderr,
++                "\tAuthentication by keyboard-interactive succeeded.\n");
+         }
+     } else if (auth_pw & 4) {
+         /* Or by public key */
+         if (libssh2_userauth_publickey_fromfile(session, username, keyfile1, keyfile2, password)) {
+-            printf("\tAuthentication by public key failed!\n");
++            fprintf(stderr, "\tAuthentication by public key failed!\n");
+             goto shutdown;
+         } else {
+-            printf("\tAuthentication by public key succeeded.\n");
++            fprintf(stderr, "\tAuthentication by public key succeeded.\n");
+         }
+     } else {
+-        printf("No supported authentication methods found!\n");
++        fprintf(stderr, "No supported authentication methods found!\n");
+         goto shutdown;
+     }
+ 
+diff --git a/example/sftp_RW_nonblock.c b/example/sftp_RW_nonblock.c
+index babb48a..77c2027 100644
+--- a/example/sftp_RW_nonblock.c
++++ b/example/sftp_RW_nonblock.c
+@@ -141,11 +141,11 @@ int main(int argc, char *argv[])
+      * user, that's your call
+      */
+     fingerprint = libssh2_hostkey_hash(session, LIBSSH2_HOSTKEY_HASH_SHA1);
+-    printf("Fingerprint: ");
++    fprintf(stderr, "Fingerprint: ");
+     for(i = 0; i < 20; i++) {
+-        printf("%02X ", (unsigned char)fingerprint[i]);
++        fprintf(stderr, "%02X ", (unsigned char)fingerprint[i]);
+     }
+-    printf("\n");
++    fprintf(stderr, "\n");
+ 
+     if(argc > 1) {
+         username = argv[1];
+@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
+ 
+     tempstorage = fopen(STORAGE, "wb");
+     if(!tempstorage) {
+-        printf("Can't open temp storage file %s\n", STORAGE);
++        fprintf(stderr, "Can't open temp storage file %s\n", STORAGE);
+         goto shutdown;
+     }
+ 
+@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
+         while ((rc = libssh2_userauth_password(session, username, password))
+                == LIBSSH2_ERROR_EAGAIN);
+         if (rc) {
+-            printf("Authentication by password failed.\n");
++            fprintf(stderr, "Authentication by password failed.\n");
+             goto shutdown;
+         }
+     } else {
+@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
+                                                     password)) ==
+                LIBSSH2_ERROR_EAGAIN);
+         if (rc) {
+-            printf("\tAuthentication by public key failed\n");
++            fprintf(stderr, "\tAuthentication by public key failed\n");
+             goto shutdown;
+         }
+     }
+@@ -341,7 +341,7 @@ int main(int argc, char *argv[])
+ #endif
+     if (tempstorage)
+         fclose(tempstorage);
+-    printf("all done\n");
++    fprintf(stderr, "all done\n");
+ 
+     libssh2_exit();
+ 
+diff --git a/example/sftp_append.c b/example/sftp_append.c
+index 731d21a..7585d38 100644
+--- a/example/sftp_append.c
++++ b/example/sftp_append.c
+@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
+ 
+     local = fopen(loclfile, "rb");
+     if (!local) {
+-        printf("Can't local file %s\n", loclfile);
++        fprintf(stderr, "Can't open local file %s\n", loclfile);
+         return -1;
+     }
+ 
+@@ -129,16 +129,16 @@ int main(int argc, char *argv[])
+      * user, that's your call
+      */
+     fingerprint = libssh2_hostkey_hash(session, LIBSSH2_HOSTKEY_HASH_SHA1);
+-    printf("Fingerprint: ");
++    fprintf(stderr, "Fingerprint: ");
+     for(i = 0; i < 20; i++) {
+-        printf("%02X ", (unsigned char)fingerprint[i]);
++        fprintf(stderr, "%02X ", (unsigned char)fingerprint[i]);
+     }
+-    printf("\n");
++    fprintf(stderr, "\n");
+ 
+     if (auth_pw) {
+         /* We could authenticate via password */
+         if (libssh2_userauth_password(session, username, password)) {
+-            printf("Authentication by password failed.\n");
++            fprintf(stderr, "Authentication by password failed.\n");
+             goto shutdown;
+         }
+     } else {
+@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
+                             "/home/username/.ssh/id_rsa.pub",
+                             "/home/username/.ssh/id_rsa",
+                             password)) {
+-            printf("\tAuthentication by public key failed\n");
++            fprintf(stderr, "\tAuthentication by public key failed\n");
+             goto shutdown;
+         }
+     }
+@@ -174,12 +174,12 @@ int main(int argc, char *argv[])
+     }
+ 
+     if(libssh2_sftp_fstat_ex(sftp_handle, &attrs, 0) < 0) {
+-        printf("libssh2_sftp_fstat_ex failed\n");
++        fprintf(stderr, "libssh2_sftp_fstat_ex failed\n");
+         goto shutdown;
+     }
+     else
+         libssh2_sftp_seek64(sftp_handle, attrs.filesize);
+-    printf("Did a seek to position %ld\n", (long) attrs.filesize);
++    fprintf(stderr, "Did a seek to position %ld\n", (long) attrs.filesize);
+ 
+     fprintf(stderr, "libssh2_sftp_open() a handle for APPEND\n");
+ 
+@@ -222,7 +222,7 @@ shutdown:
+ #endif
+     if (local)
+         fclose(local);
+-    printf("all done\n");
++    fprintf(stderr, "all done\n");
+ 
+     libssh2_exit();
+ 
+diff --git a/example/sftp_mkdir.c b/example/sftp_mkdir.c
+index 39af8f0..8747084 100644
+--- a/example/sftp_mkdir.c
++++ b/example/sftp_mkdir.c
+@@ -110,16 +110,16 @@ int main(int argc, char *argv[])
+      * user, that's your call
+      */
+     fingerprint = libssh2_hostkey_hash(session, LIBSSH2_HOSTKEY_HASH_SHA1);
+-    printf("Fingerprint: ");
++    fprintf(stderr, "Fingerprint: ");
+     for(i = 0; i < 20; i++) {
+-        printf("%02X ", (unsigned char)fingerprint[i]);
++        fprintf(stderr, "%02X ", (unsigned char)fingerprint[i]);
+     }
+-    printf("\n");
++    fprintf(stderr, "\n");
+ 
+     if (auth_pw) {
+         /* We could authenticate via password */
+         if (libssh2_userauth_password(session, username, password)) {
+-            printf("Authentication by password failed.\n");
++            fprintf(stderr, "Authentication by password failed.\n");
+             goto shutdown;
+         }
+     } else {
+@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
+                             "/home/username/.ssh/id_rsa.pub",
+                             "/home/username/.ssh/id_rsa",
+                             password)) {
+-            printf("\tAuthentication by public key failed\n");
++            fprintf(stderr, "\tAuthentication by public key failed\n");
+             goto shutdown;
+         }
+     }
+@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
+ #else
+     close(sock);
+ #endif
+-    printf("all done\n");
++    fprintf(stderr, "all done\n");
+ 
+     libssh2_exit();
+ 
+diff --git a/example/sftp_mkdir_nonblock.c b/example/sftp_mkdir_nonblock.c
+index 84cdc8f..22a8f59 100644
+--- a/example/sftp_mkdir_nonblock.c
++++ b/example/sftp_mkdir_nonblock.c
+@@ -110,16 +110,16 @@ int main(int argc, char *argv[])
+      * user, that's your call
+      */
+     fingerprint = libssh2_hostkey_hash(session, LIBSSH2_HOSTKEY_HASH_SHA1);
+-    printf("Fingerprint: ");
++    fprintf(stderr, "Fingerprint: ");
+     for(i = 0; i < 20; i++) {
+-        printf("%02X ", (unsigned char)fingerprint[i]);
++        fprintf(stderr, "%02X ", (unsigned char)fingerprint[i]);
+     }
+-    printf("\n");
++    fprintf(stderr, "\n");
+ 
+     if (auth_pw) {
+         /* We could authenticate via password */
+         if (libssh2_userauth_password(session, username, password)) {
+-            printf("Authentication by password failed.\n");
++            fprintf(stderr, "Authentication by password failed.\n");
+             goto shutdown;
+         }
+     } else {
+@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
+                             "/home/username/.ssh/id_rsa.pub",
+                             "/home/username/.ssh/id_rsa",
+                             password)) {
+-            printf("\tAuthentication by public key failed\n");
++            fprintf(stderr, "\tAuthentication by public key failed\n");
+             goto shutdown;
+         }
+     }
+@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
+ #else
+     close(sock);
+ #endif
+-    printf("all done\n");
++    fprintf(stderr, "all done\n");
+ 
+     libssh2_exit();
+ 
+diff --git a/example/sftp_nonblock.c b/example/sftp_nonblock.c
+index 6ddc109..29cec8a 100644
+--- a/example/sftp_nonblock.c
++++ b/example/sftp_nonblock.c
+@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
+ 
+     gettimeofday(&end, NULL);
+     time_ms = tvdiff(end, start);
+-    printf("Got %d bytes in %ld ms = %.1f bytes/sec spin: %d\n", total,
++    fprintf(stderr, "Got %d bytes in %ld ms = %.1f bytes/sec spin: %d\n", total,
+            time_ms, total/(time_ms/1000.0), spin );
+ 
+     libssh2_sftp_close(sftp_handle);
+@@ -259,7 +259,7 @@ int main(int argc, char *argv[])
+ 
+ shutdown:
+ 
+-    printf("libssh2_session_disconnect\n");
++    fprintf(stderr, "libssh2_session_disconnect\n");
+     while (libssh2_session_disconnect(session,
+                                       "Normal Shutdown, Thank you") ==
+            LIBSSH2_ERROR_EAGAIN);
+diff --git a/example/sftp_write.c b/example/sftp_write.c
+index 9415ce4..483f80a 100644
+--- a/example/sftp_write.c
++++ b/example/sftp_write.c
+@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
+ 
+     local = fopen(loclfile, "rb");
+     if (!local) {
+-        printf("Can't local file %s\n", loclfile);
++        fprintf(stderr, "Can't open local file %s\n", loclfile);
+         return -1;
+     }
+ 
+@@ -128,16 +128,16 @@ int main(int argc, char *argv[])
+      * user, that's your call
+      */
+     fingerprint = libssh2_hostkey_hash(session, LIBSSH2_HOSTKEY_HASH_SHA1);
+-    printf("Fingerprint: ");
++    fprintf(stderr, "Fingerprint: ");
+     for(i = 0; i < 20; i++) {
+-        printf("%02X ", (unsigned char)fingerprint[i]);
++        fprintf(stderr, "%02X ", (unsigned char)fingerprint[i]);
+     }
+-    printf("\n");
++    fprintf(stderr, "\n");
+ 
+     if (auth_pw) {
+         /* We could authenticate via password */
+         if (libssh2_userauth_password(session, username, password)) {
+-            printf("Authentication by password failed.\n");
++            fprintf(stderr, "Authentication by password failed.\n");
+             goto shutdown;
+         }
+     } else {
+@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
+                             "/home/username/.ssh/id_rsa.pub",
+                             "/home/username/.ssh/id_rsa",
+                             password)) {
+-            printf("\tAuthentication by public key failed\n");
++            fprintf(stderr, "\tAuthentication by public key failed\n");
+             goto shutdown;
+         }
+     }
+@@ -206,7 +206,7 @@ shutdown:
+ #endif
+     if (local)
+         fclose(local);
+-    printf("all done\n");
++    fprintf(stderr, "all done\n");
+ 
+     libssh2_exit();
+ 
+diff --git a/example/sftp_write_nonblock.c b/example/sftp_write_nonblock.c
+index 61cc5f4..0d66c40 100644
+--- a/example/sftp_write_nonblock.c
++++ b/example/sftp_write_nonblock.c
+@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
+ 
+     local = fopen(loclfile, "rb");
+     if (!local) {
+-        printf("Can't local file %s\n", loclfile);
++        fprintf(stderr, "Can't open local file %s\n", loclfile);
+         return -1;
+     }
+ 
+@@ -169,18 +169,18 @@ int main(int argc, char *argv[])
+      * that's your call
+      */
+     fingerprint = libssh2_hostkey_hash(session, LIBSSH2_HOSTKEY_HASH_SHA1);
+-    printf("Fingerprint: ");
++    fprintf(stderr, "Fingerprint: ");
+     for(i = 0; i < 20; i++) {
+-        printf("%02X ", (unsigned char)fingerprint[i]);
++        fprintf(stderr, "%02X ", (unsigned char)fingerprint[i]);
+     }
+-    printf("\n");
++    fprintf(stderr, "\n");
+ 
+     if (auth_pw) {
+         /* We could authenticate via password */
+         while ((rc = libssh2_userauth_password(session, username, password)) ==
+                LIBSSH2_ERROR_EAGAIN);
+         if (rc) {
+-            printf("Authentication by password failed.\n");
++            fprintf(stderr, "Authentication by password failed.\n");
+             goto shutdown;
+         }
+     } else {
+@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
+                                                          password)) ==
+                LIBSSH2_ERROR_EAGAIN);
+     if (rc) {
+-            printf("\tAuthentication by public key failed\n");
++            fprintf(stderr, "\tAuthentication by public key failed\n");
+             goto shutdown;
+         }
+     }
+@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
+ 
+     duration = (int)(time(NULL)-start);
+ 
+-    printf("%ld bytes in %d seconds makes %.1f bytes/sec\n",
++    fprintf(stderr, "%ld bytes in %d seconds makes %.1f bytes/sec\n",
+            total, duration, total/(double)duration);
+ 
+ 
+@@ -272,7 +272,7 @@ shutdown:
+ #else
+     close(sock);
+ #endif
+-    printf("all done\n");
++    fprintf(stderr, "all done\n");
+ 
+     libssh2_exit();
+ 
+diff --git a/example/sftp_write_sliding.c b/example/sftp_write_sliding.c
+index 2d8301c..c2ba39d 100644
+--- a/example/sftp_write_sliding.c
++++ b/example/sftp_write_sliding.c
+@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
+ 
+     local = fopen(loclfile, "rb");
+     if (!local) {
+-        printf("Can't local file %s\n", loclfile);
++        fprintf(stderr, "Can't open local file %s\n", loclfile);
+         return -1;
+     }
+ 
+@@ -169,18 +169,18 @@ int main(int argc, char *argv[])
+      * that's your call
+      */
+     fingerprint = libssh2_hostkey_hash(session, LIBSSH2_HOSTKEY_HASH_SHA1);
+-    printf("Fingerprint: ");
++    fprintf(stderr, "Fingerprint: ");
+     for(i = 0; i < 20; i++) {
+-        printf("%02X ", (unsigned char)fingerprint[i]);
++        fprintf(stderr, "%02X ", (unsigned char)fingerprint[i]);
+     }
+-    printf("\n");
++    fprintf(stderr, "\n");
+ 
+     if (auth_pw) {
+         /* We could authenticate via password */
+         while ((rc = libssh2_userauth_password(session, username, password)) ==
+                LIBSSH2_ERROR_EAGAIN);
+         if (rc) {
+-            printf("Authentication by password failed.\n");
++            fprintf(stderr, "Authentication by password failed.\n");
+             goto shutdown;
+         }
+     } else {
+@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
+                                                          password)) ==
+                LIBSSH2_ERROR_EAGAIN);
+     if (rc) {
+-            printf("\tAuthentication by public key failed\n");
++            fprintf(stderr, "\tAuthentication by public key failed\n");
+             goto shutdown;
+         }
+     }
+@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
+ 
+     duration = (int)(time(NULL)-start);
+ 
+-    printf("%ld bytes in %d seconds makes %.1f bytes/sec\n",
++    fprintf(stderr, "%ld bytes in %d seconds makes %.1f bytes/sec\n",
+            total, duration, total/(double)duration);
+ 
+ 
+@@ -281,7 +281,7 @@ shutdown:
+ #else
+     close(sock);
+ #endif
+-    printf("all done\n");
++    fprintf(stderr, "all done\n");
+ 
+     libssh2_exit();
+ 
+diff --git a/example/sftpdir.c b/example/sftpdir.c
+index 006fd27..cb9fb88 100644
+--- a/example/sftpdir.c
++++ b/example/sftpdir.c
+@@ -130,16 +130,16 @@ int main(int argc, char *argv[])
+      * user, that's your call
+      */
+     fingerprint = libssh2_hostkey_hash(session, LIBSSH2_HOSTKEY_HASH_SHA1);
+-    printf("Fingerprint: ");
++    fprintf(stderr, "Fingerprint: ");
+     for(i = 0; i < 20; i++) {
+-        printf("%02X ", (unsigned char)fingerprint[i]);
++        fprintf(stderr, "%02X ", (unsigned char)fingerprint[i]);
+     }
+-    printf("\n");
++    fprintf(stderr, "\n");
+ 
+     if (auth_pw) {
+         /* We could authenticate via password */
+         if (libssh2_userauth_password(session, username, password)) {
+-            printf("Authentication by password failed.\n");
++            fprintf(stderr, "Authentication by password failed.\n");
+             goto shutdown;
+         }
+     } else {
+@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
+                             "/home/username/.ssh/id_rsa.pub",
+                             "/home/username/.ssh/id_rsa",
+                             password)) {
+-            printf("\tAuthentication by public key failed\n");
++            fprintf(stderr, "\tAuthentication by public key failed\n");
+             goto shutdown;
+         }
+     }
+@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
+ #else
+     close(sock);
+ #endif
+-    printf("all done\n");
++    fprintf(stderr, "all done\n");
+ 
+     libssh2_exit();
+ 
+diff --git a/example/sftpdir_nonblock.c b/example/sftpdir_nonblock.c
+index 38fb010..c8ad9f5 100644
+--- a/example/sftpdir_nonblock.c
++++ b/example/sftpdir_nonblock.c
+@@ -134,11 +134,11 @@ int main(int argc, char *argv[])
+      * user, that's your call
+      */
+     fingerprint = libssh2_hostkey_hash(session, LIBSSH2_HOSTKEY_HASH_SHA1);
+-    printf("Fingerprint: ");
++    fprintf(stderr, "Fingerprint: ");
+     for(i = 0; i < 20; i++) {
+-        printf("%02X ", (unsigned char)fingerprint[i]);
++        fprintf(stderr, "%02X ", (unsigned char)fingerprint[i]);
+     }
+-    printf("\n");
++    fprintf(stderr, "\n");
+ 
+     if (auth_pw) {
+         /* We could authenticate via password */
+@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
+ #else
+     close(sock);
+ #endif
+-    printf("all done\n");
++    fprintf(stderr, "all done\n");
+ 
+     libssh2_exit();
+ 
+diff --git a/example/ssh2.c b/example/ssh2.c
+index d5e6166..008496c 100644
+--- a/example/ssh2.c
++++ b/example/ssh2.c
+@@ -126,15 +126,15 @@ int main(int argc, char *argv[])
+      * call
+      */
+     fingerprint = libssh2_hostkey_hash(session, LIBSSH2_HOSTKEY_HASH_SHA1);
+-    printf("Fingerprint: ");
++    fprintf(stderr, "Fingerprint: ");
+     for(i = 0; i < 20; i++) {
+-        printf("%02X ", (unsigned char)fingerprint[i]);
++        fprintf(stderr, "%02X ", (unsigned char)fingerprint[i]);
+     }
+-    printf("\n");
++    fprintf(stderr, "\n");
+ 
+     /* check what authentication methods are available */
+     userauthlist = libssh2_userauth_list(session, username, strlen(username));
+-    printf("Authentication methods: %s\n", userauthlist);
++    fprintf(stderr, "Authentication methods: %s\n", userauthlist);
+     if (strstr(userauthlist, "password") != NULL) {
+         auth_pw |= 1;
+     }
+@@ -161,31 +161,33 @@ int main(int argc, char *argv[])
+     if (auth_pw & 1) {
+         /* We could authenticate via password */
+         if (libssh2_userauth_password(session, username, password)) {
+-            printf("\tAuthentication by password failed!\n");
++            fprintf(stderr, "\tAuthentication by password failed!\n");
+             goto shutdown;
+         } else {
+-            printf("\tAuthentication by password succeeded.\n");
++            fprintf(stderr, "\tAuthentication by password succeeded.\n");
+         }
+     } else if (auth_pw & 2) {
+         /* Or via keyboard-interactive */
+         if (libssh2_userauth_keyboard_interactive(session, username,
+                                                   &kbd_callback) ) {
+-            printf("\tAuthentication by keyboard-interactive failed!\n");
++            fprintf(stderr,
++                "\tAuthentication by keyboard-interactive failed!\n");
+             goto shutdown;
+         } else {
+-            printf("\tAuthentication by keyboard-interactive succeeded.\n");
++            fprintf(stderr,
++                "\tAuthentication by keyboard-interactive succeeded.\n");
+         }
+     } else if (auth_pw & 4) {
+         /* Or by public key */
+         if (libssh2_userauth_publickey_fromfile(session, username, keyfile1,
+                                                 keyfile2, password)) {
+-            printf("\tAuthentication by public key failed!\n");
++            fprintf(stderr, "\tAuthentication by public key failed!\n");
+             goto shutdown;
+         } else {
+-            printf("\tAuthentication by public key succeeded.\n");
++            fprintf(stderr, "\tAuthentication by public key succeeded.\n");
+         }
+     } else {
+-        printf("No supported authentication methods found!\n");
++        fprintf(stderr, "No supported authentication methods found!\n");
+         goto shutdown;
+     }
+ 
+@@ -250,7 +252,7 @@ int main(int argc, char *argv[])
+ #else
+     close(sock);
+ #endif
+-    printf("all done!\n");
++    fprintf(stderr, "all done!\n");
+ 
+     libssh2_exit();
+ 
+diff --git a/example/ssh2_agent.c b/example/ssh2_agent.c
+index 9ca1a42..231445f 100644
+--- a/example/ssh2_agent.c
++++ b/example/ssh2_agent.c
+@@ -105,15 +105,15 @@ int main(int argc, char *argv[])
+      * call
+      */
+     fingerprint = libssh2_hostkey_hash(session, LIBSSH2_HOSTKEY_HASH_SHA1);
+-    printf("Fingerprint: ");
++    fprintf(stderr, "Fingerprint: ");
+     for(i = 0; i < 20; i++) {
+-        printf("%02X ", (unsigned char)fingerprint[i]);
++        fprintf(stderr, "%02X ", (unsigned char)fingerprint[i]);
+     }
+-    printf("\n");
++    fprintf(stderr, "\n");
+ 
+     /* check what authentication methods are available */
+     userauthlist = libssh2_userauth_list(session, username, strlen(username));
+-    printf("Authentication methods: %s\n", userauthlist);
++    fprintf(stderr, "Authentication methods: %s\n", userauthlist);
+     if (strstr(userauthlist, "publickey") == NULL) {
+         fprintf(stderr, "\"publickey\" authentication is not supported\n");
+         goto shutdown;
+@@ -147,11 +147,11 @@ int main(int argc, char *argv[])
+             goto shutdown;
+         }
+         if (libssh2_agent_userauth(agent, username, identity)) {
+-            printf("\tAuthentication with username %s and "
++            fprintf(stderr, "\tAuthentication with username %s and "
+                    "public key %s failed!\n",
+                    username, identity->comment);
+         } else {
+-            printf("\tAuthentication with username %s and "
++            fprintf(stderr, "\tAuthentication with username %s and "
+                    "public key %s succeeded!\n",
+                    username, identity->comment);
+             break;
+@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
+ #endif
+     }
+ 
+-    printf("all done!\n");
++    fprintf(stderr, "all done!\n");
+ 
+     libssh2_exit();
+ 
+diff --git a/example/ssh2_echo.c b/example/ssh2_echo.c
+index 1fd8f3f..2430e33 100644
+--- a/example/ssh2_echo.c
++++ b/example/ssh2_echo.c
+@@ -327,7 +327,7 @@ int main(int argc, char *argv[])
+         }
+ 
+         if (exitsignal)
+-            printf("\nGot signal: %s\n", exitsignal);
++            fprintf(stderr, "\nGot signal: %s\n", exitsignal);
+ 
+         libssh2_channel_free(channel);
+         channel = NULL;
+diff --git a/example/ssh2_exec.c b/example/ssh2_exec.c
+index e5b151d..d47761c 100644
+--- a/example/ssh2_exec.c
++++ b/example/ssh2_exec.c
+@@ -292,9 +292,9 @@ int main(int argc, char *argv[])
+     }
+ 
+     if (exitsignal)
+-        printf("\nGot signal: %s\n", exitsignal);
++        fprintf(stderr, "\nGot signal: %s\n", exitsignal);
+     else 
+-        printf("\nEXIT: %d bytecount: %d\n", exitcode, bytecount);
++        fprintf(stderr, "\nEXIT: %d bytecount: %d\n", exitcode, bytecount);
+ 
+     libssh2_channel_free(channel);
+     channel = NULL;
+diff --git a/example/subsystem_netconf.c b/example/subsystem_netconf.c
+index 708113b..6f83661 100644
+--- a/example/subsystem_netconf.c
++++ b/example/subsystem_netconf.c
+@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
+ 
+     /* check what authentication methods are available */
+     userauthlist = libssh2_userauth_list(session, username, strlen(username));
+-    printf("Authentication methods: %s\n", userauthlist);
++    fprintf(stderr, "Authentication methods: %s\n", userauthlist);
+     if (strstr(userauthlist, "password"))
+         auth |= AUTH_PASSWORD;
+     if (strstr(userauthlist, "publickey"))
+@@ -195,12 +195,12 @@ int main(int argc, char *argv[])
+     } else if (auth & AUTH_PUBLICKEY) {
+         if (libssh2_userauth_publickey_fromfile(session, username, keyfile1,
+                                                 keyfile2, password)) {
+-            printf("Authentication by public key failed!\n");
++            fprintf(stderr, "Authentication by public key failed!\n");
+             goto shutdown;
+         }
+-        printf("Authentication by public key succeeded.\n");
++        fprintf(stderr, "Authentication by public key succeeded.\n");
+     } else {
+-        printf("No supported authentication methods found!\n");
++        fprintf(stderr, "No supported authentication methods found!\n");
+         goto shutdown;
+     }
+ 
+@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
+ 
+     /* NETCONF: http://tools.ietf.org/html/draft-ietf-netconf-ssh-06 */
+ 
+-    printf("Sending NETCONF client <hello>\n");
++    fprintf(stderr, "Sending NETCONF client <hello>\n");
+     snprintf(buf, sizeof(buf),
+       "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+       "<hello>"
+@@ -235,14 +235,14 @@ int main(int argc, char *argv[])
+     if (-1 == netconf_write(channel, buf, len))
+         goto shutdown;
+ 
+-    printf("Reading NETCONF server <hello>\n");
++    fprintf(stderr, "Reading NETCONF server <hello>\n");
+     len = netconf_read_until(channel, "</hello>", buf, sizeof(buf));
+     if (-1 == len)
+         goto shutdown;
+ 
+-    printf("Got %d bytes:\n----------------------\n%s", (int)len, buf);
++    fprintf(stderr, "Got %d bytes:\n----------------------\n%s", (int)len, buf);
+ 
+-    printf("Sending NETCONF <rpc>\n");
++    fprintf(stderr, "Sending NETCONF <rpc>\n");
+     snprintf(buf, sizeof(buf),
+       "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+       "<rpc xmlns=\"urn:ietf:params:xml:ns:netconf:base:1.0\">"
+@@ -252,12 +252,12 @@ int main(int argc, char *argv[])
+     if (-1 == netconf_write(channel, buf, len))
+         goto shutdown;
+ 
+-    printf("Reading NETCONF <rpc-reply>\n");
++    fprintf(stderr, "Reading NETCONF <rpc-reply>\n");
+     len = netconf_read_until(channel, "</rpc-reply>", buf, sizeof(buf));
+     if (-1 == len)
+         goto shutdown;
+ 
+-    printf("Got %d bytes:\n----------------------\n%s", (int)len, buf);
++    fprintf(stderr, "Got %d bytes:\n----------------------\n%s", (int)len, buf);
+ 
+ shutdown:
+     if (channel)
+diff --git a/example/tcpip-forward.c b/example/tcpip-forward.c
+index a408b69..94d3cc8 100644
+--- a/example/tcpip-forward.c
++++ b/example/tcpip-forward.c
+@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
+ 
+     /* check what authentication methods are available */
+     userauthlist = libssh2_userauth_list(session, username, strlen(username));
+-    printf("Authentication methods: %s\n", userauthlist);
++    fprintf(stderr, "Authentication methods: %s\n", userauthlist);
+     if (strstr(userauthlist, "password"))
+         auth |= AUTH_PASSWORD;
+     if (strstr(userauthlist, "publickey"))
+@@ -159,17 +159,17 @@ int main(int argc, char *argv[])
+     } else if (auth & AUTH_PUBLICKEY) {
+         if (libssh2_userauth_publickey_fromfile(session, username, keyfile1,
+                                                 keyfile2, password)) {
+-            printf("\tAuthentication by public key failed!\n");
++            fprintf(stderr, "\tAuthentication by public key failed!\n");
+             goto shutdown;
+         }
+-        printf("\tAuthentication by public key succeeded.\n");
++        fprintf(stderr, "\tAuthentication by public key succeeded.\n");
+     } else {
+-        printf("No supported authentication methods found!\n");
++        fprintf(stderr, "No supported authentication methods found!\n");
+         goto shutdown;
+     }
+ 
+-    printf("Asking server to listen on remote %s:%d\n", remote_listenhost,
+-        remote_wantport);
++    fprintf(stderr, "Asking server to listen on remote %s:%d\n",
++        remote_listenhost, remote_wantport);
+ 
+     listener = libssh2_channel_forward_listen_ex(session, remote_listenhost,
+         remote_wantport, &remote_listenport, 1);
+@@ -180,10 +180,10 @@ int main(int argc, char *argv[])
+         goto shutdown;
+     }
+ 
+-    printf("Server is listening on %s:%d\n", remote_listenhost,
++    fprintf(stderr, "Server is listening on %s:%d\n", remote_listenhost,
+         remote_listenport);
+ 
+-    printf("Waiting for remote connection\n");
++    fprintf(stderr, "Waiting for remote connection\n");
+     channel = libssh2_channel_forward_accept(listener);
+     if (!channel) {
+         fprintf(stderr, "Could not accept connection!\n"
+@@ -192,7 +192,8 @@ int main(int argc, char *argv[])
+         goto shutdown;
+     }
+ 
+-    printf("Accepted remote connection. Connecting to local server %s:%d\n",
++    fprintf(stderr,
++        "Accepted remote connection. Connecting to local server %s:%d\n",
+         local_destip, local_destport);
+     forwardsock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+     sin.sin_family = AF_INET;
+@@ -206,7 +207,7 @@ int main(int argc, char *argv[])
+         goto shutdown;
+     }
+ 
+-    printf("Forwarding connection from remote %s:%d to local %s:%d\n",
++    fprintf(stderr, "Forwarding connection from remote %s:%d to local %s:%d\n",
+         remote_listenhost, remote_listenport, local_destip, local_destport);
+ 
+     /* Must use non-blocking IO hereafter due to the current libssh2 API */
+@@ -228,7 +229,7 @@ int main(int argc, char *argv[])
+                 perror("read");
+                 goto shutdown;
+             } else if (0 == len) {
+-                printf("The local server at %s:%d disconnected!\n",
++                fprintf(stderr, "The local server at %s:%d disconnected!\n",
+                     local_destip, local_destport);
+                 goto shutdown;
+             }
+@@ -260,7 +261,7 @@ int main(int argc, char *argv[])
+                 wr += i;
+             }
+             if (libssh2_channel_eof(channel)) {
+-                printf("The remote client at %s:%d disconnected!\n",
++                fprintf(stderr, "The remote client at %s:%d disconnected!\n",
+                     remote_listenhost, remote_listenport);
+                 goto shutdown;
+             }
+-- 
+1.7.1
+

@@ -9,7 +9,7 @@
 
 Name:		libssh2
 Version:	1.4.2
-Release:	3%{?dist}
+Release:	4%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
@@ -17,6 +17,7 @@ URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
 Patch0:		libssh2-1.4.2-utf8.patch
 Patch1:		libssh2-1.4.2-fips.patch
+Patch2:		libssh2-1.4.2-examples.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
@@ -68,6 +69,9 @@ developing applications that use libssh2.
 
 # Make sure libssh2 works in FIPS mode...
 %patch1 -p1
+
+# examples: use stderr for messages, stdout for data
+%patch2 -p1
 
 # Make sshd transition appropriately if building in an SELinux environment
 %if !(0%{?fedora} >= 17 || 0%{?rhel} >= 7)
@@ -132,6 +136,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Wed Nov 07 2012 Kamil Dudka <kdudka@redhat.com> 1.4.2-4
+- examples: use stderr for messages, stdout for data (upstream commit b31e35ab)
+
 * Wed Sep 26 2012 Kamil Dudka <kdudka@redhat.com> 1.4.2-3
 - fix basic functionality of libssh2 in FIPS mode
 - skip SELinux-related quirks on recent distros to prevent a test-suite failure
