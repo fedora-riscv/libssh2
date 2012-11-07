@@ -138,6 +138,7 @@ rm -rf %{buildroot}
 %changelog
 * Wed Nov 07 2012 Kamil Dudka <kdudka@redhat.com> 1.4.2-4
 - examples: use stderr for messages, stdout for data (upstream commit b31e35ab)
+- update libssh2_hostkey_hash(3) man page (upstream commit fe8f3deb)
 
 * Wed Sep 26 2012 Kamil Dudka <kdudka@redhat.com> 1.4.2-3
 - fix basic functionality of libssh2 in FIPS mode
