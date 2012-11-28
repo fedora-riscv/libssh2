@@ -8,16 +8,14 @@
 %endif
 
 Name:		libssh2
-Version:	1.4.2
-Release:	4%{?dist}
+Version:	1.4.3
+Release:	1%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
 URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
 Patch0:		libssh2-1.4.2-utf8.patch
-Patch1:		libssh2-1.4.2-fips.patch
-Patch2:		libssh2-1.4.2-examples.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
@@ -66,12 +64,6 @@ developing applications that use libssh2.
 
 # Make sure things are UTF-8...
 %patch0 -p1
-
-# Make sure libssh2 works in FIPS mode...
-%patch1 -p1
-
-# examples: use stderr for messages, stdout for data
-%patch2 -p1
 
 # Make sshd transition appropriately if building in an SELinux environment
 %if !(0%{?fedora} >= 17 || 0%{?rhel} >= 7)
@@ -136,13 +128,29 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Wed Nov 28 2012 Paul Howarth <paul@city-fan.org> 1.4.3-1
+- Update to 1.4.3
+  - compression: add support for zlib@openssh.com
+  - sftp_read: return error if a too large package arrives
+  - libssh2_hostkey_hash.3: update the description of return value
+  - Fixed MSVC NMakefile
+  - examples: use stderr for messages, stdout for data
+  - openssl: do not leak memory when handling errors
+  - improved handling of disabled MD5 algorithm in OpenSSL
+  - known_hosts: Fail when parsing unknown keys in known_hosts file
+  - configure: gcrypt doesn't come with pkg-config support
+  - session_free: wrong variable used for keeping state
+  - libssh2_userauth_publickey_fromfile_ex.3: mention publickey == NULL
+  - comp_method_zlib_decomp: handle Z_BUF_ERROR when inflating
+- Drop upstreamed patches
+
 * Wed Nov 07 2012 Kamil Dudka <kdudka@redhat.com> 1.4.2-4
 - examples: use stderr for messages, stdout for data (upstream commit b31e35ab)
-- update libssh2_hostkey_hash(3) man page (upstream commit fe8f3deb)
+- Update libssh2_hostkey_hash(3) man page (upstream commit fe8f3deb)
 
 * Wed Sep 26 2012 Kamil Dudka <kdudka@redhat.com> 1.4.2-3
-- fix basic functionality of libssh2 in FIPS mode
-- skip SELinux-related quirks on recent distros to prevent a test-suite failure
+- Fix basic functionality of libssh2 in FIPS mode
+- Skip SELinux-related quirks on recent distros to prevent a test-suite failure
 
 * Thu Jul 19 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.4.2-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
