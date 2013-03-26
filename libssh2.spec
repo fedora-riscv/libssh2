@@ -9,7 +9,7 @@
 
 Name:		libssh2
 Version:	1.4.3
-Release:	2%{?dist}
+Release:	3%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
@@ -61,6 +61,10 @@ developing applications that use libssh2.
 
 %prep
 %setup -q
+
+# replace hard wired port number in the test suite to avoid collisions
+# between 32bit and 64bit builds running on a single build-host
+sed -i s/4711/47%{?__isa_bits}/ tests/ssh2.{c,sh}
 
 # Make sure things are UTF-8...
 %patch0 -p1
@@ -128,6 +132,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Tue Mar 26 2013 Kamil Dudka <kdudka@redhat.com> 1.4.3-3
+- avoid collisions between 32bit and 64bit builds running on a single build-host
+
 * Thu Feb 14 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.4.3-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
 
