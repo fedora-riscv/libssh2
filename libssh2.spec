@@ -7,6 +7,9 @@
 %global noarch_docs_package 0
 %endif
 
+# Define %%{__isa_bits} for old releases
+%{!?__isa_bits: %global __isa_bits %((echo '#include <bits/wordsize.h>'; echo __WORDSIZE) | cpp - | grep -Ex '32|64')}
+
 Name:		libssh2
 Version:	1.4.3
 Release:	3%{?dist}
@@ -62,8 +65,8 @@ developing applications that use libssh2.
 %prep
 %setup -q
 
-# replace hard wired port number in the test suite to avoid collisions
-# between 32bit and 64bit builds running on a single build-host
+# Replace hard wired port number in the test suite to avoid collisions
+# between 32-bit and 64-bit builds running on a single build-host
 sed -i s/4711/47%{?__isa_bits}/ tests/ssh2.{c,sh}
 
 # Make sure things are UTF-8...
