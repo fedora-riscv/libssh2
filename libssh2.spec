@@ -12,7 +12,7 @@
 
 Name:		libssh2
 Version:	1.4.3
-Release:	3%{?dist}
+Release:	4%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
@@ -83,6 +83,9 @@ chcon $(/usr/sbin/matchpathcon -n /etc/ssh/ssh_host_key) tests/etc/{host,user} |
 %configure --disable-static --enable-shared
 make %{?_smp_mflags}
 
+# Avoid polluting libssh2.pc with linker options (#947813)
+sed -i -e 's|[[:space:]]-Wl,[^[:space:]]*||' libssh2.pc
+
 %install
 rm -rf %{buildroot}
 make install DESTDIR=%{buildroot} INSTALL="install -p"
@@ -135,8 +138,12 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Wed Apr  3 2013 Paul Howarth <paul@city-fan.org> 1.4.3-4
+- Avoid polluting libssh2.pc with linker options (#947813)
+
 * Tue Mar 26 2013 Kamil Dudka <kdudka@redhat.com> 1.4.3-3
-- avoid collisions between 32bit and 64bit builds running on a single build-host
+- Avoid collisions between 32-bit and 64-bit builds running on a single build
+  host
 
 * Thu Feb 14 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.4.3-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
