@@ -9,7 +9,7 @@
 
 Name:		libssh2
 Version:	1.4.3
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
@@ -76,6 +76,9 @@ chcon $(/usr/sbin/matchpathcon -n /etc/ssh/ssh_host_key) tests/etc/{host,user} |
 %configure --disable-static --enable-shared
 make %{?_smp_mflags}
 
+# Avoid polluting libssh2.pc with linker options (#947813)
+sed -i -e 's|[[:space:]]-Wl,[^[:space:]]*||' libssh2.pc
+
 %install
 rm -rf %{buildroot}
 make install DESTDIR=%{buildroot} INSTALL="install -p"
@@ -128,6 +131,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Wed Apr  3 2013 Paul Howarth <paul@city-fan.org> 1.4.3-2
+- Avoid polluting libssh2.pc with linker options (#947813)
+
 * Wed Nov 28 2012 Paul Howarth <paul@city-fan.org> 1.4.3-1
 - Update to 1.4.3
   - compression: add support for zlib@openssh.com
