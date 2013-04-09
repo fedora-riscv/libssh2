@@ -12,17 +12,17 @@
 
 Name:		libssh2
 Version:	1.4.3
-Release:	5%{?dist}
+Release:	6%{?dist}
 Summary:	A library implementing the SSH2 protocol
+Group:		System Environment/Libraries
 License:	BSD
 URL:		http://www.libssh2.org/
-
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
 Patch0:		libssh2-1.4.2-utf8.patch
 Patch1:		0001-sftp-seek-Don-t-flush-buffers-on-same-offset.patch
 Patch2:		0002-sftp-statvfs-Along-error-path-reset-the-correct-stat.patch
 Patch3:		0003-sftp-Add-support-for-fsync-OpenSSH-extension.patch
-
+BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
 BuildRequires:	/usr/bin/man
@@ -45,6 +45,7 @@ SECSH-DHGEX(04), and SECSH-NUMBERS(10).
 
 %package	devel
 Summary:	Development files for libssh2
+Group:		Development/Libraries
 Requires:	%{name} = %{version}-%{release}
 Requires:	pkgconfig
 
@@ -54,6 +55,7 @@ developing applications that use libssh2.
 
 %package	docs
 Summary:	Documentation for libssh2
+Group:		Development/Libraries
 Requires:	%{name} = %{version}-%{release}
 %if %{noarch_docs_package}
 BuildArch:	noarch
@@ -93,6 +95,7 @@ make %{?_smp_mflags}
 sed -i -e 's|[[:space:]]-Wl,[^[:space:]]*||' libssh2.pc
 
 %install
+rm -rf %{buildroot}
 make install DESTDIR=%{buildroot} INSTALL="install -p"
 find %{buildroot} -name '*.la' -exec rm -f {} \;
 
@@ -118,6 +121,9 @@ echo "exit 0" > tests/ssh2.sh
 %endif
 make -C tests check
 
+%clean
+rm -rf %{buildroot}
+
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
@@ -140,6 +146,9 @@ make -C tests check
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Tue Apr  9 2013 Paul Howarth <paul@city-fan.org> 1.4.3-6
+- Revert 'Modernize the spec file' so as to retain EL-5 spec compatibility
+
 * Tue Apr  9 2013 Richard W.M. Jones <rjones@redhat.com> 1.4.3-5
 - Add three patches from upstream git required for qemu ssh block driver.
 - Modernize the spec file:
