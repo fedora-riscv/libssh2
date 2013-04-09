@@ -19,6 +19,9 @@ URL:		http://www.libssh2.org/
 
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
 Patch0:		libssh2-1.4.2-utf8.patch
+Patch1:		0001-sftp-seek-Don-t-flush-buffers-on-same-offset.patch
+Patch2:		0002-sftp-statvfs-Along-error-path-reset-the-correct-stat.patch
+Patch3:		0003-sftp-Add-support-for-fsync-OpenSSH-extension.patch
 
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
@@ -69,6 +72,11 @@ sed -i s/4711/47%{?__isa_bits}/ tests/ssh2.{c,sh}
 
 # Make sure things are UTF-8...
 %patch0 -p1
+
+# Three upstream patches required for qemu ssh block driver.
+%patch1 -p1
+%patch2 -p1
+%patch3 -p1
 
 # Make sshd transition appropriately if building in an SELinux environment
 %if !(0%{?fedora} >= 17 || 0%{?rhel} >= 7)
@@ -133,6 +141,7 @@ make -C tests check
 
 %changelog
 * Tue Apr  9 2013 Richard W.M. Jones <rjones@redhat.com> 1.4.3-5
+- Add three patches from upstream git required for qemu ssh block driver.
 - Modernize the spec file:
   * Remove BuildRoot.
   * Remove Group.
