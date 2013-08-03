@@ -12,7 +12,7 @@
 
 Name:		libssh2
 Version:	1.4.3
-Release:	6%{?dist}
+Release:	7%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
@@ -146,6 +146,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Sat Aug 03 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.4.3-7
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
+
 * Tue Apr  9 2013 Paul Howarth <paul@city-fan.org> 1.4.3-6
 - Revert 'Modernize the spec file' so as to retain EL-5 spec compatibility
 
