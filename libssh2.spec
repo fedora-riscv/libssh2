@@ -23,6 +23,7 @@ Patch1:		0001-sftp-seek-Don-t-flush-buffers-on-same-offset.patch
 Patch2:		0002-sftp-statvfs-Along-error-path-reset-the-correct-stat.patch
 Patch3:		0003-sftp-Add-support-for-fsync-OpenSSH-extension.patch
 Patch4:		0004-partially-revert-window_size-explicit-adjustments-on.patch
+Patch5:		0005-channel.c-fix-a-use-after-free.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
@@ -83,6 +84,9 @@ sed -i s/4711/47%{?__isa_bits}/ tests/ssh2.{c,sh}
 
 # http://thread.gmane.org/gmane.network.ssh.libssh2.devel/6428
 %patch4 -p1
+
+# https://trac.libssh2.org/ticket/268
+%patch5 -p1
 
 # Make sshd transition appropriately if building in an SELinux environment
 %if !(0%{?fedora} >= 17 || 0%{?rhel} >= 7)
@@ -152,6 +156,7 @@ rm -rf %{buildroot}
 %changelog
 * Wed Aug 14 2013 Kamil Dudka <kdudka@redhat.com> 1.4.3-8
 - fix very slow sftp upload to localhost
+- fix a use after free in channel.c
 
 * Sat Aug 03 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.4.3-7
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
