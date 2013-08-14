@@ -3,7 +3,7 @@
 
 --- libssh2/NEWS
 +++ libssh2/NEWS
-@@ -3284,7 +3284,7 @@ Simon Josefsson (16 Nov 2009)
+@@ -3552,7 +3552,7 @@ Simon Josefsson (16 Nov 2009)
  - support arcfour128 cipher per RFC 4345
  
  Daniel Stenberg (21 Oct 2009)
