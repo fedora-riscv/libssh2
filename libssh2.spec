@@ -12,7 +12,7 @@
 
 Name:		libssh2
 Version:	1.4.3
-Release:	8%{?dist}
+Release:	9%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
@@ -122,8 +122,8 @@ if [ ! -c /dev/tty ]; then
 	echo Skipping SSH test due to missing /dev/tty
 	echo "exit 0" > tests/ssh2.sh
 fi
-# Apparently it fails in the sparc and arm buildsystems too
-%ifarch %{sparc} %{arm}
+# Apparently it fails in the sparc, ppc* and arm buildsystems too
+%ifarch %{sparc} %{arm} ppc %{power64}
 echo Skipping SSH test on sparc/arm
 echo "exit 0" > tests/ssh2.sh
 %endif
@@ -154,6 +154,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Mon Feb 17 2014 Karsten Hopp <karsten@redhat.com> 1.4.3-9
+- skip self checks on ppc*
+
 * Wed Aug 14 2013 Kamil Dudka <kdudka@redhat.com> 1.4.3-8
 - fix very slow sftp upload to localhost
 - fix a use after free in channel.c
