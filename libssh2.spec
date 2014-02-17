@@ -12,7 +12,7 @@
 
 Name:		libssh2
 Version:	1.4.3
-Release:	10%{?dist}
+Release:	11%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
@@ -116,6 +116,7 @@ find example/ -type f '(' -name '*.am' -o -name '*.in' ')' -exec rm -v {} \;
 mv -v example example.%{_arch}
 
 %check
+echo "Running tests for %{_arch}"
 # The SSH test will fail if we don't have /dev/tty, as is the case in some
 # versions of mock (#672713)
 if [ ! -c /dev/tty ]; then
@@ -127,9 +128,9 @@ fi
 echo Skipping SSH test on sparc/arm
 echo "exit 0" > tests/ssh2.sh
 %endif
-# mansyntax check fails on PPC* with some strange locale error
-%ifarch ppc %{power64}
-echo "Skipping mansyntax test on PPC*"
+# mansyntax check fails on PPC* and aarch64 with some strange locale error
+%ifarch ppc %{power64} aarch64
+echo "Skipping mansyntax test on PPC* and aarch64"
 echo "exit 0" > tests/mansyntax.sh
 %endif
 make -C tests check
@@ -159,15 +160,18 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Mon Feb 17 2014 Paul Howarth <paul@city-fan.org> - 1.4.3-11
+- The aarch64 buildroot seems to have the same locale issue as the PPC one
+
 * Mon Feb 17 2014 Karsten Hopp <karsten@redhat.com> 1.4.3-10
-- next attempt to work around a self check problem on PPC*
+- Next attempt to work around a self check problem on PPC*
 
 * Mon Feb 17 2014 Karsten Hopp <karsten@redhat.com> 1.4.3-9
-- skip self checks on ppc*
+- Skip self checks on ppc*
 
 * Wed Aug 14 2013 Kamil Dudka <kdudka@redhat.com> 1.4.3-8
-- fix very slow sftp upload to localhost
-- fix a use after free in channel.c
+- Fix very slow sftp upload to localhost
+- Fix a use after free in channel.c
 
 * Sat Aug 03 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.4.3-7
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
@@ -176,12 +180,12 @@ rm -rf %{buildroot}
 - Revert 'Modernize the spec file' so as to retain EL-5 spec compatibility
 
 * Tue Apr  9 2013 Richard W.M. Jones <rjones@redhat.com> 1.4.3-5
-- Add three patches from upstream git required for qemu ssh block driver.
+- Add three patches from upstream git required for qemu ssh block driver
 - Modernize the spec file:
-  * Remove BuildRoot.
-  * Remove Group.
-  * Remove clean section.
-  * Don't need to clean up buildroot before installing.
+  * Remove BuildRoot
+  * Remove Group
+  * Remove clean section
+  * Don't need to clean up buildroot before installing
 
 * Wed Apr  3 2013 Paul Howarth <paul@city-fan.org> 1.4.3-4
 - Avoid polluting libssh2.pc with linker options (#947813)
