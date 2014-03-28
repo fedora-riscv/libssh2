@@ -1,0 +1,85 @@
+From 0a758095c40ae1b32dc5052a706a16c2d9ac5742 Mon Sep 17 00:00:00 2001
+From: Salvador Fandino <sfandino@yahoo.com>
+Date: Mon, 21 Oct 2013 11:58:55 +0200
+Subject: [PATCH 10/11] Set default window size to 2MB
+
+The default channel window size used until now was 256KB. This value is
+too small and results on a bottleneck on real-life networks where
+round-trip delays can easily reach 300ms.
+
+The issue was not visible because the configured channel window size
+was being ignored and a hard-coded value of ~22MB being used instead,
+but that was fixed on a previous commit.
+
+This patch just changes the default window size
+(LIBSSH2_CHANNEL_WINDOW_DEFAULT) to 2MB. It is the same value used by
+OpenSSH and in our opinion represents a good compromise between memory
+used and transfer speed.
+
+Performance tests were run to determine the optimum value. The details
+and related discussion are available from the following thread on the
+libssh2 mailing-list:
+
+http://www.libssh2.org/mail/libssh2-devel-archive-2013-10/0018.shtml
+http://article.gmane.org/gmane.network.ssh.libssh2.devel/6543
+
+An excerpt follows:
+
+"I have been running some transfer test and measuring their speed.
+
+My setup was composed of a quad-core Linux machine running Ubuntu 13.10
+x86_64 with a LXC container inside. The data transfers were performed
+from the container to the host (never crossing through a physical
+network device).
+
+Network delays were simulated using the tc tool. And ping was used to
+verify that they worked as intended during the tests.
+
+The operation performed was the equivalent to the following ssh command:
+
+  $ ssh container "dd bs=16K count=8K if=/dev/zero" >/dev/null
+
+Though, establishment and closing of the SSH connection was excluded
+from the timings.
+
+I run the tests several times transferring files of sizes up to 128MB
+and the results were consistent between runs.
+
+The results corresponding to the 128MB transfer are available here:
+
+https://docs.google.com/spreadsheet/ccc?key=0Ao1yRmX6PQQzdG5wSFlrZl9HRWNET3ZyN0hnaGo5ZFE&usp=sharing
+
+It clearly shows that 256KB is too small as the default window size.
+Moving to a 512MB generates a great improvement and after the 1MB mark
+the returns rapidly diminish. Other factors (TCP window size, probably)
+become more limiting than the channel window size
+
+For comparison I also performed the same transfers using OpenSSH. Its
+speed is usually on par with that of libssh2 using a window size of 1MB
+(even if it uses a 2MB window, maybe it is less aggressive sending the
+window adjust msgs)."
+
+Signed-off-by: Salvador Fandino <sfandino@yahoo.com>
+
+[upstream commit 85a827d1bceb9abd4442f225dd7c65ef5cefdc32]
+Signed-off-by: Kamil Dudka <kdudka@redhat.com>
+---
+ include/libssh2.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/include/libssh2.h b/include/libssh2.h
+index 9b1a6e1..df873fc 100644
+--- a/include/libssh2.h
++++ b/include/libssh2.h
+@@ -587,7 +587,7 @@ LIBSSH2_API int libssh2_poll(LIBSSH2_POLLFD *fds, unsigned int nfds,
+                              long timeout);
+ 
+ /* Channel API */
+-#define LIBSSH2_CHANNEL_WINDOW_DEFAULT  (256*1024)
++#define LIBSSH2_CHANNEL_WINDOW_DEFAULT  (2*1024*1024)
+ #define LIBSSH2_CHANNEL_PACKET_DEFAULT  32768
+ #define LIBSSH2_CHANNEL_MINADJUST       1024
+ 
+-- 
+1.7.1
+

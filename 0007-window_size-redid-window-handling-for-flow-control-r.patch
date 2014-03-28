@@ -1,0 +1,146 @@
+From 8af6637d86b6a85e8889c286f7ff3d841fc5621c Mon Sep 17 00:00:00 2001
+From: Salvador Fandino <sfandino@yahoo.com>
+Date: Sat, 12 Oct 2013 02:51:46 +0200
+Subject: [PATCH 07/11] window_size: redid window handling for flow control reasons
+
+Until now, the window size (channel->remote.window_size) was being
+updated just after receiving the packet from the transport layer.
+
+That behaviour is wrong because the channel queue may grow uncontrolled
+when data arrives from the network faster that the upper layer consumes
+it.
+
+This patch adds a new counter, read_avail, which keeps a count of the
+bytes available from the packet queue for reading. Also, now the window
+size is adjusted when the data is actually read by an upper layer.
+
+That way, if the upper layer stops reading data, the window will
+eventually fill and the remote host will stop sending data. When the
+upper layers reads enough data, a window adjust packet is delivered and
+the transfer resumes.
+
+The read_avail counter is used to detect the situation when the remote
+server tries to send data surpassing the window size. In that case, the
+extra data is discarded.
+
+Signed-off-by: Salvador <sfandino@yahoo.com>
+
+[upstream commit cdeef54967ed5b7d5bd8fa6da5851aa3d173faa0]
+Signed-off-by: Kamil Dudka <kdudka@redhat.com>
+---
+ src/channel.c      |    8 +++++++-
+ src/libssh2_priv.h |    2 ++
+ src/packet.c       |   35 ++++++++++++++++++++++++++++-------
+ 3 files changed, 37 insertions(+), 8 deletions(-)
+
+diff --git a/src/channel.c b/src/channel.c
+index 74262d8..499d815 100644
+--- a/src/channel.c
++++ b/src/channel.c
+@@ -1411,6 +1411,9 @@ _libssh2_channel_flush(LIBSSH2_CHANNEL *channel, int streamid)
+         channel->flush_state = libssh2_NB_state_created;
+     }
+ 
++    channel->read_avail -= channel->flush_flush_bytes;
++    channel->remote.window_size -= channel->flush_flush_bytes;
++
+     if (channel->flush_refund_bytes) {
+         int rc;
+ 
+@@ -1868,11 +1871,14 @@ ssize_t _libssh2_channel_read(LIBSSH2_CHANNEL *channel, int stream_id,
+         /* if the transport layer said EAGAIN then we say so as well */
+         return _libssh2_error(session, rc, "would block");
+     }
+-    else
++    else {
++        channel->read_avail -= bytes_read;
++        channel->remote.window_size -= bytes_read;
+         /* make sure we remain in the created state to focus on emptying the
+            data we already have in the packet brigade before we try to read
+            more off the network again */
+         channel->read_state = libssh2_NB_state_created;
++    }
+ 
+     if(channel->remote.window_size < (LIBSSH2_CHANNEL_WINDOW_DEFAULT*30)) {
+         /* the window is getting too narrow, expand it! */
+diff --git a/src/libssh2_priv.h b/src/libssh2_priv.h
+index 4ec9f73..fcf4370 100644
+--- a/src/libssh2_priv.h
++++ b/src/libssh2_priv.h
+@@ -357,6 +357,8 @@ struct _LIBSSH2_CHANNEL
+     libssh2_channel_data local, remote;
+     /* Amount of bytes to be refunded to receive window (but not yet sent) */
+     uint32_t adjust_queue;
++    /* Data immediately available for reading */
++    uint32_t read_avail;
+ 
+     LIBSSH2_SESSION *session;
+ 
+diff --git a/src/packet.c b/src/packet.c
+index bfbd56a..d2e758c 100644
+--- a/src/packet.c
++++ b/src/packet.c
+@@ -653,6 +653,18 @@ _libssh2_packet_add(LIBSSH2_SESSION * session, unsigned char *data,
+                 _libssh2_debug(session, LIBSSH2_TRACE_CONN,
+                                "Ignoring extended data and refunding %d bytes",
+                                (int) (datalen - 13));
++                if (channelp->read_avail + datalen - data_head >=
++                    channelp->remote.window_size)
++                    datalen = channelp->remote.window_size -
++                        channelp->read_avail + data_head;
++
++                channelp->remote.window_size -= datalen - data_head;
++                _libssh2_debug(session, LIBSSH2_TRACE_CONN,
++                               "shrinking window size by %lu bytes to %lu, read_avail %lu",
++                               datalen - data_head,
++                               channelp->remote.window_size,
++                               channelp->read_avail);
++
+                 session->packAdd_channelp = channelp;
+ 
+                 /* Adjust the window based on the block we just freed */
+@@ -684,7 +696,7 @@ _libssh2_packet_add(LIBSSH2_SESSION * session, unsigned char *data,
+                                " to receive, truncating");
+                 datalen = channelp->remote.packet_size + data_head;
+             }
+-            if (channelp->remote.window_size <= 0) {
++            if (channelp->remote.window_size <= channelp->read_avail) {
+                 /*
+                  * Spec says we MAY ignore bytes sent beyond
+                  * window_size
+@@ -700,17 +712,26 @@ _libssh2_packet_add(LIBSSH2_SESSION * session, unsigned char *data,
+             /* Reset EOF status */
+             channelp->remote.eof = 0;
+ 
+-            if ((datalen - data_head) > channelp->remote.window_size) {
++            if (channelp->read_avail + datalen - data_head >
++                channelp->remote.window_size) {
+                 _libssh2_error(session,
+                                LIBSSH2_ERROR_CHANNEL_WINDOW_EXCEEDED,
+                                "Remote sent more data than current "
+                                "window allows, truncating");
+-                datalen = channelp->remote.window_size + data_head;
+-                channelp->remote.window_size = 0;
++                datalen = channelp->remote.window_size -
++                    channelp->read_avail + data_head;
+             }
+-            else
+-                /* Now that we've received it, shrink our window */
+-                channelp->remote.window_size -= datalen - data_head;
++
++            /* Update the read_avail counter. The window size will be
++             * updated once the data is actually read from the queue
++             * from an upper layer */
++            channelp->read_avail += datalen - data_head;
++
++            _libssh2_debug(session, LIBSSH2_TRACE_CONN,
++                           "increasing read_avail by %lu bytes to %lu/%lu",
++                           (long)(datalen - data_head),
++                           (long)channelp->read_avail,
++                           (long)channelp->remote.window_size);
+ 
+             break;
+ 
+-- 
+1.7.1
+

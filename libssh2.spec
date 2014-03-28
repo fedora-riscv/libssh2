@@ -12,7 +12,7 @@
 
 Name:		libssh2
 Version:	1.4.3
-Release:	11%{?dist}
+Release:	12%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
@@ -24,6 +24,12 @@ Patch2:		0002-sftp-statvfs-Along-error-path-reset-the-correct-stat.patch
 Patch3:		0003-sftp-Add-support-for-fsync-OpenSSH-extension.patch
 Patch4:		0004-partially-revert-window_size-explicit-adjustments-on.patch
 Patch5:		0005-channel.c-fix-a-use-after-free.patch
+Patch6:		0006-_libssh2_channel_write-client-spins-on-write-when-wi.patch
+Patch7:		0007-window_size-redid-window-handling-for-flow-control-r.patch
+Patch8:		0008-_libssh2_channel_read-fix-data-drop-when-out-of-wind.patch
+Patch9:		0009-_libssh2_channel_read-Honour-window_size_initial.patch
+Patch10:	0010-Set-default-window-size-to-2MB.patch
+Patch11:	0011-channel_receive_window_adjust-store-windows-size-alw.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
@@ -87,6 +93,14 @@ sed -i s/4711/47%{?__isa_bits}/ tests/ssh2.{c,sh}
 
 # https://trac.libssh2.org/ticket/268
 %patch5 -p1
+
+# Fix curl's excessive memory consumption during scp download
+%patch6 -p1
+%patch7 -p1
+%patch8 -p1
+%patch9 -p1
+%patch10 -p1
+%patch11 -p1
 
 # Make sshd transition appropriately if building in an SELinux environment
 %if !(0%{?fedora} >= 17 || 0%{?rhel} >= 7)
@@ -160,6 +174,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Wed Apr 30 2014 Kamil Dudka <kdudka@redhat.com> 1.4.3-12
+- Fix curl's excessive memory consumption during scp download
+
 * Mon Feb 17 2014 Paul Howarth <paul@city-fan.org> - 1.4.3-11
 - The aarch64 buildroot seems to have the same locale issue as the PPC one
 
