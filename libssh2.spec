@@ -12,7 +12,7 @@
 
 Name:		libssh2
 Version:	1.4.3
-Release:	9%{?dist}
+Release:	10%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
@@ -30,6 +30,7 @@ Patch8:		0008-_libssh2_channel_read-fix-data-drop-when-out-of-wind.patch
 Patch9:		0009-_libssh2_channel_read-Honour-window_size_initial.patch
 Patch10:	0010-Set-default-window-size-to-2MB.patch
 Patch11:	0011-channel_receive_window_adjust-store-windows-size-alw.patch
+Patch12:	0012-libssh2_agent_init-init-fd-to-LIBSSH2_INVALID_SOCKET.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
@@ -102,6 +103,9 @@ sed -i s/4711/47%{?__isa_bits}/ tests/ssh2.{c,sh}
 %patch10 -p1
 %patch11 -p1
 
+# prevent a not-connected agent from closing STDIN (#1147717)
+%patch12 -p1
+
 # Make sshd transition appropriately if building in an SELinux environment
 %if !(0%{?fedora} >= 17 || 0%{?rhel} >= 7)
 chcon $(/usr/sbin/matchpathcon -n /etc/rc.d/init.d/sshd) tests/ssh2.sh || :
@@ -168,6 +172,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Fri Oct 10 2014 Kamil Dudka <kdudka@redhat.com> 1.4.3-10
+- prevent a not-connected agent from closing STDIN (#1147717)
+
 * Wed Apr 30 2014 Kamil Dudka <kdudka@redhat.com> 1.4.3-9
 - Fix curl's excessive memory consumption during scp download
 
