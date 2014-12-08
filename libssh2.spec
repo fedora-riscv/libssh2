@@ -18,6 +18,7 @@ Group:		System Environment/Libraries
 License:	BSD
 URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
+Source1:	libssh2.pc
 Patch0:		libssh2-1.4.2-utf8.patch
 Patch1:		0001-sftp-seek-Don-t-flush-buffers-on-same-offset.patch
 Patch2:		0002-sftp-statvfs-Along-error-path-reset-the-correct-stat.patch
@@ -31,6 +32,7 @@ Patch9:		0009-_libssh2_channel_read-Honour-window_size_initial.patch
 Patch10:	0010-Set-default-window-size-to-2MB.patch
 Patch11:	0011-channel_receive_window_adjust-store-windows-size-alw.patch
 Patch12:	0012-libssh2_agent_init-init-fd-to-LIBSSH2_INVALID_SOCKET.patch
+Patch13:	libssh2-1.4.3-cmake.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
@@ -77,6 +79,10 @@ developing applications that use libssh2.
 %prep
 %setup -q
 
+# remove auto-generated files
+rm -v {src,example}/libssh2_config.h.in
+find -name Makefile.in -delete
+
 # use git to apply patches
 git init
 git add --all
@@ -109,9 +115,14 @@ git branch init
 # prevent a not-connected agent from closing STDIN (#1147717)
 %patch12 -p1
 
+# add support for the CMake build system
+%patch13 -p1
+sed -e 's/LIBRARY DESTINATION lib/LIBRARY DESTINATION ${LIB_INSTALL_DIR}/' \
+    -i src/CMakeLists.txt
+
 # Replace hard wired port number in the test suite to avoid collisions
 # between 32-bit and 64-bit builds running on a single build-host
-sed -i s/4711/47%{?__isa_bits}/ tests/ssh2.{c,sh}
+sed -i s/4711/47%{?__isa_bits}/ tests/{ssh2.c,sshd_fixture.sh.in}
 
 # Make sshd transition appropriately if building in an SELinux environment
 %if !(0%{?fedora} >= 17 || 0%{?rhel} >= 7)
@@ -121,24 +132,32 @@ chcon $(/usr/sbin/matchpathcon -n /etc/ssh/ssh_host_key) tests/etc/{host,user} |
 %endif
 
 %build
-%configure --disable-static --enable-shared
+mkdir libssh2_build
+cd libssh2_build
+%{cmake} .. -DBUILD_SHARED_LIBS=ON
 make %{?_smp_mflags}
-
-# Avoid polluting libssh2.pc with linker options (#947813)
-sed -i -e 's|[[:space:]]-Wl,[^[:space:]]*||' libssh2.pc
 
 %install
 rm -rf %{buildroot}
+cd libssh2_build
 make install DESTDIR=%{buildroot} INSTALL="install -p"
-find %{buildroot} -name '*.la' -exec rm -f {} \;
-
-# clean things up a bit for packaging
-make -C example clean
-rm -rf example/.deps
-find example/ -type f '(' -name '*.am' -o -name '*.in' ')' -exec rm -v {} \;
 
 # avoid multilib conflict on libssh2-devel
+cd ..
+rm -f example/Makefile.am
 mv -v example example.%{_arch}
+
+# TODO make CMake take care of this
+install -D -m0644 -p %{SOURCE1} %{buildroot}%{_libdir}/pkgconfig/libssh2.pc
+
+# TODO install man pages with CMake
+install -D -m0755 -d %{buildroot}%{_mandir}/man3/
+printf 'install:
+\tinstall -m0644 -p $(dist_man_MANS) $(MANDIR)\n' >> docs/Makefile.am
+cd docs && make -f Makefile.am install MANDIR=%{buildroot}%{_mandir}/man3/
+
+# remove redundant files installed by CMake
+rm -rf %{buildroot}/usr/{lib/cmake,share/libssh2}
 
 %check
 echo "Running tests for %{_arch}"
@@ -158,7 +177,8 @@ echo "exit 0" > tests/ssh2.sh
 echo "Skipping mansyntax test on PPC* and aarch64"
 echo "exit 0" > tests/mansyntax.sh
 %endif
-make -C tests check
+cd libssh2_build
+make test
 
 %clean
 rm -rf %{buildroot}
@@ -189,6 +209,7 @@ rm -rf %{buildroot}
 %changelog
 * Mon Dec 08 2014 Kamil Dudka <kdudka@redhat.com> 1.4.3-16.1
 - use git to apply patches
+- use CMake as the build system
 
 * Fri Oct 10 2014 Kamil Dudka <kdudka@redhat.com> 1.4.3-16
 - prevent a not-connected agent from closing STDIN (#1147717)
