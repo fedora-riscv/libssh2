@@ -12,7 +12,7 @@
 
 Name:		libssh2
 Version:	1.4.3
-Release:	16%{?dist}
+Release:	16.1%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
@@ -32,6 +32,7 @@ Patch10:	0010-Set-default-window-size-to-2MB.patch
 Patch11:	0011-channel_receive_window_adjust-store-windows-size-alw.patch
 Patch12:	0012-libssh2_agent_init-init-fd-to-LIBSSH2_INVALID_SOCKET.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
+BuildRequires:	git
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
 BuildRequires:	/usr/bin/man
@@ -77,9 +78,14 @@ developing applications that use libssh2.
 %prep
 %setup -q
 
-# Replace hard wired port number in the test suite to avoid collisions
-# between 32-bit and 64-bit builds running on a single build-host
-sed -i s/4711/47%{?__isa_bits}/ tests/ssh2.{c,sh}
+# use git to apply patches
+git init
+git config user.email 'buildsys@fedoraproject.org'
+git config user.name 'Fedora Koji Build System'
+git add --all
+git commit -m init
+git branch init
+%global __patch sh -c 'git am --keep-cr'
 
 # Make sure things are UTF-8...
 %patch0 -p1
@@ -105,6 +111,10 @@ sed -i s/4711/47%{?__isa_bits}/ tests/ssh2.{c,sh}
 
 # prevent a not-connected agent from closing STDIN (#1147717)
 %patch12 -p1
+
+# Replace hard wired port number in the test suite to avoid collisions
+# between 32-bit and 64-bit builds running on a single build-host
+sed -i s/4711/47%{?__isa_bits}/ tests/ssh2.{c,sh}
 
 # Make sshd transition appropriately if building in an SELinux environment
 %if !(0%{?fedora} >= 17 || 0%{?rhel} >= 7)
@@ -180,6 +190,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Mon Dec 08 2014 Kamil Dudka <kdudka@redhat.com> 1.4.3-16.1
+- use git to apply patches
+
 * Fri Oct 10 2014 Kamil Dudka <kdudka@redhat.com> 1.4.3-16
 - prevent a not-connected agent from closing STDIN (#1147717)
 
