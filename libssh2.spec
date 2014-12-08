@@ -34,6 +34,7 @@ Patch11:	0011-channel_receive_window_adjust-store-windows-size-alw.patch
 Patch12:	0012-libssh2_agent_init-init-fd-to-LIBSSH2_INVALID_SOCKET.patch
 Patch13:	libssh2-1.4.3-cmake.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
+BuildRequires:	cmake
 BuildRequires:	git
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
