@@ -34,6 +34,7 @@ Patch11:	0011-channel_receive_window_adjust-store-windows-size-alw.patch
 Patch12:	0012-libssh2_agent_init-init-fd-to-LIBSSH2_INVALID_SOCKET.patch
 Patch13:	libssh2-1.4.3-cmake.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
+BuildRequires:	git
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
 BuildRequires:	/usr/bin/man
@@ -85,6 +86,8 @@ find -name Makefile.in -delete
 
 # use git to apply patches
 git init
+git config user.email 'buildsys@fedoraproject.org'
+git config user.name 'Fedora Koji Build System'
 git add --all
 git commit -m init
 git branch init
