@@ -154,12 +154,6 @@ mv -v example example.%{_arch}
 # TODO make CMake take care of this
 install -D -m0644 -p %{SOURCE1} %{buildroot}%{_libdir}/pkgconfig/libssh2.pc
 
-# TODO install man pages with CMake
-install -D -m0755 -d %{buildroot}%{_mandir}/man3/
-printf 'install:
-\tinstall -m0644 -p $(dist_man_MANS) $(MANDIR)\n' >> docs/Makefile.am
-cd docs && make -f Makefile.am install MANDIR=%{buildroot}%{_mandir}/man3/
-
 # remove redundant files installed by CMake
 rm -rf %{buildroot}/usr/{lib/cmake,share/libssh2}
 
