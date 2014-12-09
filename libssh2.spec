@@ -124,6 +124,9 @@ git branch init
 sed -e 's/LIBRARY DESTINATION lib/LIBRARY DESTINATION ${LIB_INSTALL_DIR}/' \
     -i src/CMakeLists.txt
 
+# remove auto-generated files
+find -name Makefile.am -delete
+
 # Replace hard wired port number in the test suite to avoid collisions
 # between 32-bit and 64-bit builds running on a single build-host
 sed -i s/4711/47%{?__isa_bits}/ tests/{ssh2.c,sshd_fixture.sh.in}
@@ -147,18 +150,10 @@ cd libssh2_build
 make install DESTDIR=%{buildroot} INSTALL="install -p"
 
 # avoid multilib conflict on libssh2-devel
-cd ..
-rm -f example/Makefile.am
-mv -v example example.%{_arch}
+mv -v ../example ../example.%{_arch}
 
 # TODO make CMake take care of this
 install -D -m0644 -p %{SOURCE1} %{buildroot}%{_libdir}/pkgconfig/libssh2.pc
-
-# TODO install man pages with CMake
-install -D -m0755 -d %{buildroot}%{_mandir}/man3/
-printf 'install:
-\tinstall -m0644 -p $(dist_man_MANS) $(MANDIR)\n' >> docs/Makefile.am
-cd docs && make -f Makefile.am install MANDIR=%{buildroot}%{_mandir}/man3/
 
 # remove redundant files installed by CMake
 rm -rf %{buildroot}/usr/{lib/cmake,share/libssh2}
