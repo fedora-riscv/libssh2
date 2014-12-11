@@ -120,8 +120,6 @@ git branch init
 
 # add support for the CMake build system
 %patch13 -p1
-sed -e 's/DESTINATION lib/DESTINATION ${LIB_INSTALL_DIR}/' \
-    -i src/CMakeLists.txt
 
 # remove auto-generated files
 find -name Makefile.am -delete
@@ -152,8 +150,7 @@ make install DESTDIR=%{buildroot} INSTALL="install -p"
 mv -v ../example ../example.%{_arch}
 
 # remove redundant files installed by CMake
-rm -rf %{buildroot}%{_libdir}/cmake
-rm -rf %{buildroot}%{_datadir}/libssh2
+rm -rf %{buildroot}/usr/{lib/cmake,share/libssh2}
 
 %check
 echo "Running tests for %{_arch}"
