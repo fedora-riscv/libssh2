@@ -11229,3 +11229,120 @@ index 0000000..fc94d8d
 -- 
 2.1.0
 
+From f7abb0680f489a84aae2388e5c5d37e5f78eb073 Mon Sep 17 00:00:00 2001
+From: Alexander Lamaison <alexander.lamaison@gmail.com>
+Date: Wed, 10 Dec 2014 23:44:38 +0000
+Subject: [PATCH] Generate libssh2.pc during CMake configuration.
+
+Upstream-commit: 946ab802b9e79acdcc6c8e386b6510cd1f86d058
+Signed-off-by: Kamil Dudka <kdudka@redhat.com>
+---
+ CMakeLists.txt     |  2 ++
+ src/CMakeLists.txt | 17 +++++++++++++++++
+ src/libssh2.pc.in  | 17 +++++++++++++++++
+ 3 files changed, 36 insertions(+)
+ create mode 100644 src/libssh2.pc.in
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index f951629..c59fb24 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -38,6 +38,8 @@ cmake_minimum_required(VERSION 2.8.11)
+ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+ 
+ project(libssh2 C)
++set(PROJECT_URL "http://www.libssh2.org/")
++set(PROJECT_DESCRIPTION "Library for SSH-based communication")
+ 
+ option(BUILD_SHARED_LIBS "Build Shared Libraries" OFF)
+ 
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 93de53a..53b8de3 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -66,6 +66,7 @@ if(CRYPTO_BACKEND STREQUAL "OpenSSL" OR NOT CRYPTO_BACKEND)
+     list(APPEND PRIVATE_COMPILE_DEFINITIONS LIBSSH2_OPENSSL)
+     list(APPEND PRIVATE_INCLUDE_DIRECTORIES ${OPENSSL_INCLUDE_DIR})
+     list(APPEND LIBRARIES ${OPENSSL_LIBRARIES})
++    list(APPEND PC_REQUIRES_PRIVATE libssl libcrypto)
+ 
+     if (WIN32)
+       find_file(DLL_LIBEAY32
+@@ -109,6 +110,7 @@ if(CRYPTO_BACKEND STREQUAL "Libgcrypt" OR NOT CRYPTO_BACKEND)
+     list(APPEND PRIVATE_COMPILE_DEFINITIONS LIBSSH2_LIBGCRYPT)
+     list(APPEND PRIVATE_INCLUDE_DIRECTORIES ${LIBGCRYPT_INCLUDE_DIRS})
+     list(APPEND LIBRARIES ${LIBGCRYPT_LIBRARIES})
++    list(APPEND PC_LIBS -lgcrypt)
+   endif()
+ endif()
+ 
+@@ -124,6 +126,7 @@ if(CRYPTO_BACKEND STREQUAL "WinCNG" OR NOT CRYPTO_BACKEND)
+ 
+     set(HAVE_LIBCRYPT32 TRUE)
+     list(APPEND LIBRARIES bcrypt)
++    list(APPEND PC_LIBS -lbcrypt)
+ 
+     check_include_files(ntdef.h HAVE_NTDEF_H)
+     check_include_files(ntstatus.h HAVE_NTSTATUS_H)
+@@ -133,6 +136,7 @@ if(CRYPTO_BACKEND STREQUAL "WinCNG" OR NOT CRYPTO_BACKEND)
+ 
+     if(HAVE_WINCRYPT_H)
+       list(APPEND LIBRARIES crypt32)
++      list(APPEND PC_LIBS -lcrypt32)
+     endif()
+ 
+   elseif(${SPECIFIC_CRYPTO_REQUIREMENT} STREQUAL ${REQUIRED})
+@@ -208,6 +212,7 @@ if(ENABLE_ZLIB_COMPRESSION)
+ 
+   target_include_directories(libssh2 PRIVATE ${ZLIB_INCLUDE_DIRS})
+   list(APPEND LIBRARIES ${ZLIB_LIBRARIES})
++  list(APPEND PC_REQUIRES_PRIVATE zlib)
+   if(ZLIB_FOUND)
+     target_compile_definitions(libssh2 PRIVATE LIBSSH2_HAVE_ZLIB=1)
+   endif()
+@@ -348,6 +353,18 @@ install(EXPORT Libssh2Config NAMESPACE Libssh2:: DESTINATION lib/cmake/libssh2)
+ export(TARGETS libssh2 NAMESPACE Libssh2:: FILE Libssh2Config.cmake)
+ export(PACKAGE Libssh2) # register it
+ 
++## Export a .pc file for client projects not using CMaek
++if(PC_REQUIRES_PRIVATE)
++  string(REPLACE ";" "," PC_REQUIRES_PRIVATE "${PC_REQUIRES_PRIVATE}")
++endif()
++if(PC_LIBS)
++  string(REPLACE ";" " " PC_LIBS "${PC_LIBS}")
++endif()
++configure_file(libssh2.pc.in libssh2.pc @ONLY)
++install(
++  FILES ${CMAKE_CURRENT_BINARY_DIR}/libssh2.pc
++  DESTINATION lib/pkgconfig)
++
+ ## Versioning
+ 
+ include(CMakePackageConfigHelpers)
+diff --git a/src/libssh2.pc.in b/src/libssh2.pc.in
+new file mode 100644
+index 0000000..8557f79
+--- /dev/null
++++ b/src/libssh2.pc.in
+@@ -0,0 +1,17 @@
++###########################################################################
++# libssh2 installation details
++###########################################################################
++
++prefix=@CMAKE_INSTALL_PREFIX@
++exec_prefix=${prefix}
++libdir=${prefix}/lib
++includedir=${prefix}/include
++
++Name: @PROJECT_NAME@
++URL: @PROJECT_URL@
++Description: @PROJECT_DESCRIPTION@
++Version: @LIBSSH2_VERSION@
++Requires.private: @PC_REQUIRES_PRIVATE@
++Libs: -L${libdir} -lssh2 @PC_LIBS@
++Libs.private: @PC_LIBS@
++Cflags: -I${includedir}
+\ No newline at end of file
+-- 
+2.1.0
+
