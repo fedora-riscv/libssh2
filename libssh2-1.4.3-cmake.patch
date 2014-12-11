@@ -10965,33 +10965,6 @@ index 0000000..f0f0408
 -- 
 2.1.0
 
-From 739a1b9e5f09293a7b5135ffd7d1382c7099b041 Mon Sep 17 00:00:00 2001
-From: Kamil Dudka <kdudka@redhat.com>
-Date: Mon, 8 Dec 2014 14:03:25 +0100
-Subject: [PATCH] CMake: hard-wire SO version in src/CMakeLists.txt
-
----
- src/CMakeLists.txt | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
-
-diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 93de53a..0053fee 100644
---- a/src/CMakeLists.txt
-+++ b/src/CMakeLists.txt
-@@ -186,7 +186,9 @@ endif()
- 
- add_library(libssh2 ${SOURCES})
- # we want it to be called libssh2 on all platforms
--set_target_properties(libssh2 PROPERTIES PREFIX "")
-+set_target_properties(libssh2 PROPERTIES PREFIX ""
-+  SOVERSION 1
-+  VERSION 1.0.1)
- 
- target_compile_definitions(libssh2 PRIVATE ${PRIVATE_COMPILE_DEFINITIONS})
- target_include_directories(libssh2
--- 
-2.1.0
-
 From 1df2809089dd50353b12dee8aca31de4e413a7f3 Mon Sep 17 00:00:00 2001
 From: Alexander Lamaison <alexander.lamaison@gmail.com>
 Date: Tue, 9 Dec 2014 00:39:53 +0000
@@ -11462,6 +11435,35 @@ index 8557f79..c070988 100644
  
  Name: @PROJECT_NAME@
  URL: @PROJECT_URL@
+-- 
+2.1.0
+
+From 08c128633c4f69ed3dbd62078a43241b9ca78b08 Mon Sep 17 00:00:00 2001
+From: Alexander Lamaison <alexander.lamaison@gmail.com>
+Date: Thu, 11 Dec 2014 00:22:16 +0000
+Subject: [PATCH] Tag .so with SONAME.
+
+Upstream-commit: d50c4f06a14fad1da34bc05af85602c5ce0e95eb
+Signed-off-by: Kamil Dudka <kdudka@redhat.com>
+---
+ src/CMakeLists.txt | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index a308a80..cfdc796 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -370,6 +370,10 @@ install(
+ 
+ ## Versioning
+ 
++set_target_properties(libssh2 PROPERTIES
++  SOVERSION 1
++  VERSION 1.0.1)
++
+ include(CMakePackageConfigHelpers)
+ write_basic_package_version_file(
+   ${CMAKE_CURRENT_BINARY_DIR}/Libssh2ConfigVersion.cmake
 -- 
 2.1.0
 
