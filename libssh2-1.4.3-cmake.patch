@@ -11346,3 +11346,122 @@ index 0000000..8557f79
 -- 
 2.1.0
 
+From 6cc1bb5af02ae8752df3504fd2c5c4e53578322a Mon Sep 17 00:00:00 2001
+From: Alexander Lamaison <alexander.lamaison@gmail.com>
+Date: Thu, 11 Dec 2014 00:02:50 +0000
+Subject: [PATCH] Install files to GNU install locations.
+
+Upstream-commit: 18146c20550dd986183e5a57abcc78ed657099f0
+Signed-off-by: Kamil Dudka <kdudka@redhat.com>
+---
+ CMakeLists.txt      |  4 ++--
+ docs/CMakeLists.txt |  3 ++-
+ src/CMakeLists.txt  | 17 ++++++++++-------
+ src/libssh2.pc.in   |  4 ++--
+ 4 files changed, 16 insertions(+), 12 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index c59fb24..372d63a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -69,10 +69,10 @@ if(NOT LIBSSH2_VERSION OR
+     "${CMAKE_CURRENT_SOURCE_DIR}/include/libssh2.h")
+ endif()
+ 
+-
++include(GNUInstallDirs)
+ install(
+   FILES AUTHORS COPYING HACKING README RELEASE-NOTES NEWS
+-  DESTINATION share/libssh2)
++  DESTINATION ${CMAKE_INSTALL_DOCDIR})
+ 
+ include(max_warnings)
+ include(FeatureSummary)
+diff --git a/docs/CMakeLists.txt b/docs/CMakeLists.txt
+index fc94d8d..bbcac97 100644
+--- a/docs/CMakeLists.txt
++++ b/docs/CMakeLists.txt
+@@ -200,4 +200,5 @@ set(MAN_PAGES
+   libssh2_userauth_publickey_fromfile_ex.3
+   libssh2_version.3)
+ 
+-install(FILES ${MAN_PAGES} DESTINATION share/man/man3)
++include(GNUInstallDirs)
++install(FILES ${MAN_PAGES} DESTINATION ${CMAKE_INSTALL_MANDIR}/man3)
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 53b8de3..a308a80 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -150,6 +150,7 @@ endif()
+ 
+ ## Library definition
+ 
++include(GNUInstallDirs)
+ set(SOURCES
+   ${CRYPTO_SOURCES}
+   agent.c
+@@ -197,7 +198,7 @@ target_include_directories(libssh2
+   PRIVATE ${PRIVATE_INCLUDE_DIRECTORIES}
+   PUBLIC
+     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+-    $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/include>)
++    $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>)
+ 
+ ## Options
+ 
+@@ -328,13 +329,13 @@ install(FILES
+   ${CMAKE_SOURCE_DIR}/include/libssh2.h
+   ${CMAKE_SOURCE_DIR}/include/libssh2_publickey.h
+   ${CMAKE_SOURCE_DIR}/include/libssh2_sftp.h
+-  DESTINATION include)
++  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+ 
+ install(TARGETS libssh2
+   EXPORT Libssh2Config
+-  RUNTIME DESTINATION bin
+-  LIBRARY DESTINATION lib
+-  ARCHIVE DESTINATION lib)
++  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
++  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
++  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+ 
+ if(BUILD_SHARED_LIBS)
+   list(APPEND _RUNTIME_DEPENDENCIES $<TARGET_FILE:libssh2>)
+@@ -346,7 +347,9 @@ set(RUNTIME_DEPENDENCIES ${_RUNTIME_DEPENDENCIES} CACHE INTERNAL
+ # Package config
+ 
+ ## During package installation, install Libssh2Config.cmake
+-install(EXPORT Libssh2Config NAMESPACE Libssh2:: DESTINATION lib/cmake/libssh2)
++install(EXPORT Libssh2Config
++  NAMESPACE Libssh2::
++  DESTINATION lib/cmake/libssh2)
+ 
+ ## During build, register directly from build tree
+ # create Libssh2Config.cmake
+@@ -363,7 +366,7 @@ endif()
+ configure_file(libssh2.pc.in libssh2.pc @ONLY)
+ install(
+   FILES ${CMAKE_CURRENT_BINARY_DIR}/libssh2.pc
+-  DESTINATION lib/pkgconfig)
++  DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+ 
+ ## Versioning
+ 
+diff --git a/src/libssh2.pc.in b/src/libssh2.pc.in
+index 8557f79..c070988 100644
+--- a/src/libssh2.pc.in
++++ b/src/libssh2.pc.in
+@@ -4,8 +4,8 @@
+ 
+ prefix=@CMAKE_INSTALL_PREFIX@
+ exec_prefix=${prefix}
+-libdir=${prefix}/lib
+-includedir=${prefix}/include
++libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
++includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+ 
+ Name: @PROJECT_NAME@
+ URL: @PROJECT_URL@
+-- 
+2.1.0
+
