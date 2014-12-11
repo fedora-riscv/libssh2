@@ -18,7 +18,6 @@ Group:		System Environment/Libraries
 License:	BSD
 URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
-Source1:	libssh2.pc
 Patch0:		libssh2-1.4.2-utf8.patch
 Patch1:		0001-sftp-seek-Don-t-flush-buffers-on-same-offset.patch
 Patch2:		0002-sftp-statvfs-Along-error-path-reset-the-correct-stat.patch
@@ -121,7 +120,7 @@ git branch init
 
 # add support for the CMake build system
 %patch13 -p1
-sed -e 's/LIBRARY DESTINATION lib/LIBRARY DESTINATION ${LIB_INSTALL_DIR}/' \
+sed -e 's/DESTINATION lib/DESTINATION ${LIB_INSTALL_DIR}/' \
     -i src/CMakeLists.txt
 
 # remove auto-generated files
@@ -152,11 +151,9 @@ make install DESTDIR=%{buildroot} INSTALL="install -p"
 # avoid multilib conflict on libssh2-devel
 mv -v ../example ../example.%{_arch}
 
-# TODO make CMake take care of this
-install -D -m0644 -p %{SOURCE1} %{buildroot}%{_libdir}/pkgconfig/libssh2.pc
-
 # remove redundant files installed by CMake
-rm -rf %{buildroot}/usr/{lib/cmake,share/libssh2}
+rm -rf %{buildroot}%{_libdir}/cmake
+rm -rf %{buildroot}%{_datadir}/libssh2
 
 %check
 echo "Running tests for %{_arch}"
