@@ -11,26 +11,14 @@
 %{!?__isa_bits: %global __isa_bits %((echo '#include <bits/wordsize.h>'; echo __WORDSIZE) | cpp - | grep -Ex '32|64')}
 
 Name:		libssh2
-Version:	1.4.3
-Release:	16%{?dist}
+Version:	1.5.0
+Release:	1%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
 URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
 Patch0:		libssh2-1.4.2-utf8.patch
-Patch1:		0001-sftp-seek-Don-t-flush-buffers-on-same-offset.patch
-Patch2:		0002-sftp-statvfs-Along-error-path-reset-the-correct-stat.patch
-Patch3:		0003-sftp-Add-support-for-fsync-OpenSSH-extension.patch
-Patch4:		0004-partially-revert-window_size-explicit-adjustments-on.patch
-Patch5:		0005-channel.c-fix-a-use-after-free.patch
-Patch6:		0006-_libssh2_channel_write-client-spins-on-write-when-wi.patch
-Patch7:		0007-window_size-redid-window-handling-for-flow-control-r.patch
-Patch8:		0008-_libssh2_channel_read-fix-data-drop-when-out-of-wind.patch
-Patch9:		0009-_libssh2_channel_read-Honour-window_size_initial.patch
-Patch10:	0010-Set-default-window-size-to-2MB.patch
-Patch11:	0011-channel_receive_window_adjust-store-windows-size-alw.patch
-Patch12:	0012-libssh2_agent_init-init-fd-to-LIBSSH2_INVALID_SOCKET.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
@@ -83,28 +71,6 @@ sed -i s/4711/47%{?__isa_bits}/ tests/ssh2.{c,sh}
 
 # Make sure things are UTF-8...
 %patch0 -p1
-
-# Three upstream patches required for qemu ssh block driver.
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
-
-# http://thread.gmane.org/gmane.network.ssh.libssh2.devel/6428
-%patch4 -p1
-
-# https://trac.libssh2.org/ticket/268
-%patch5 -p1
-
-# Fix curl's excessive memory consumption during scp download
-%patch6 -p1
-%patch7 -p1
-%patch8 -p1
-%patch9 -p1
-%patch10 -p1
-%patch11 -p1
-
-# prevent a not-connected agent from closing STDIN (#1147717)
-%patch12 -p1
 
 # Make sshd transition appropriately if building in an SELinux environment
 %if !(0%{?fedora} >= 17 || 0%{?rhel} >= 7)
@@ -161,14 +127,17 @@ rm -rf %{buildroot}
 %postun -p /sbin/ldconfig
 
 %files
-%{!?_licensedir:%global license %%doc}
+%if 0%{?_licensedir:1}
 %license COPYING
-%doc AUTHORS ChangeLog README NEWS
+%else
+%doc COPYING
+%endif
+%doc docs/AUTHORS ChangeLog NEWS README RELEASE-NOTES
 %{_libdir}/libssh2.so.1
 %{_libdir}/libssh2.so.1.*
 
 %files docs
-%doc HACKING
+%doc docs/BINDINGS docs/HACKING docs/TODO
 %{_mandir}/man3/libssh2_*.3*
 
 %files devel
@@ -180,6 +149,11 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Wed Mar 11 2015 Paul Howarth <paul@city-fan.org> - 1.5.0-1
+- Update to 1.5.0
+  - See RELEASE-NOTES for details of bug fixes and enhancements
+  - Security Advisory for CVE-2015-1782, using SSH_MSG_KEXINIT data unbounded
+
 * Fri Oct 10 2014 Kamil Dudka <kdudka@redhat.com> 1.4.3-16
 - prevent a not-connected agent from closing STDIN (#1147717)
 
