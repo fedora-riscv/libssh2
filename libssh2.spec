@@ -11,7 +11,7 @@
 %{!?__isa_bits: %global __isa_bits %((echo '#include <bits/wordsize.h>'; echo __WORDSIZE) | cpp - | grep -Ex '32|64')}
 
 Name:		libssh2
-Version:	1.5.0
+Version:	1.6.0
 Release:	1%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
@@ -149,6 +149,12 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Sun Jun 14 2015 Paul Howarth <paul@city-fan.org> - 1.6.0-1
+- Update to 1.6.0
+  - Added CMake build system
+  - Added libssh2_userauth_publickey_frommemory()
+  - See RELEASE-NOTES for details of bug fixes
+
 * Wed Mar 11 2015 Paul Howarth <paul@city-fan.org> - 1.5.0-1
 - Update to 1.5.0
   - See RELEASE-NOTES for details of bug fixes and enhancements
