@@ -12,13 +12,14 @@
 
 Name:		libssh2
 Version:	1.6.0
-Release:	2%{?dist}
+Release:	3%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
 URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
 Patch0:		libssh2-1.4.2-utf8.patch
+Patch1:		libssh2-1.6.0-pkgconfig.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
@@ -71,6 +72,9 @@ sed -i s/4711/47%{?__isa_bits}/ tests/ssh2.{c,sh}
 
 # Make sure things are UTF-8...
 %patch0 -p1
+
+# Fix pkg-config --libs output (#1279966)
+%patch1
 
 # Make sshd transition appropriately if building in an SELinux environment
 %if !(0%{?fedora} >= 17 || 0%{?rhel} >= 7)
@@ -149,6 +153,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Tue Nov 10 2015 Paul Howarth <paul@city-fan.org> - 1.6.0-3
+- Fix pkg-config --libs output (#1279966)
+
 * Wed Jun 17 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.6.0-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_23_Mass_Rebuild
 
