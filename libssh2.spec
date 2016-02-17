@@ -12,7 +12,7 @@
 
 Name:		libssh2
 Version:	1.8.0
-Release:	1%{?dist}
+Release:	1.1%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
@@ -21,6 +21,7 @@ Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
 
 BuildRequires:	coreutils
+BuildRequires:	cmake
 BuildRequires:	findutils
 BuildRequires:	gcc
 BuildRequires:	make
@@ -70,9 +71,14 @@ developing applications that use libssh2.
 %prep
 %setup -q
 
+# remove auto-generated files
+rm -v {src,example}/libssh2_config.h.in
+find -name Makefile.am -delete
+find -name Makefile.in -delete
+
 # Replace hard wired port number in the test suite to avoid collisions
 # between 32-bit and 64-bit builds running on a single build-host
-sed -i s/4711/47%{?__isa_bits}/ tests/ssh2.{c,sh}
+sed -i s/4711/47%{?__isa_bits}/ tests/{ssh2.c,sshd_fixture.sh.in}
 
 # Make sshd transition appropriately if building in an SELinux environment
 %if !(0%{?fedora} >= 17 || 0%{?rhel} >= 7)
@@ -82,21 +88,29 @@ chcon $(/usr/sbin/matchpathcon -n /etc/ssh/ssh_host_key) tests/etc/{host,user} |
 %endif
 
 %build
-%configure --disable-silent-rules --disable-static --enable-shared
+mkdir libssh2_build
+cd libssh2_build
+%{cmake} .. -DBUILD_SHARED_LIBS=ON
 make %{?_smp_mflags}
 
 %install
 rm -rf %{buildroot}
+cd libssh2_build
 make install DESTDIR=%{buildroot} INSTALL="install -p"
 find %{buildroot} -name '*.la' -delete
 
 # clean things up a bit for packaging
 make -C example clean
 rm -rf example/.deps
-find example/ -type f '(' -name '*.am' -o -name '*.in' ')' -delete
 
 # avoid multilib conflict on libssh2-devel
-mv -v example example.%{_arch}
+mv -v ../example ../example.%{_arch}
+
+# remove redundant files installed by CMake
+rm -rf %{buildroot}/usr/{lib/cmake,share/libssh2}
+
+# these are going to be installed by %%license and %%doc
+rm -f %{buildroot}/usr/share/doc/libssh2/{COPYING,HACKING,NEWS}
 
 %check
 echo "Running tests for %{_arch}"
@@ -116,7 +130,7 @@ echo "exit 0" > tests/ssh2.sh
 echo "Skipping mansyntax test on PPC* and aarch64"
 echo "exit 0" > tests/mansyntax.sh
 %endif
-make -C tests check
+make -C libssh2_build test
 
 %clean
 rm -rf %{buildroot}
@@ -145,6 +159,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Fri Nov 11 2016 Kamil Dudka <kdudka@redhat.com> - 1.8.0-1.1
+- use CMake as the build system
+
 * Tue Oct 25 2016 Paul Howarth <paul@city-fan.org> - 1.8.0-1
 - Update to 1.8.0
   - Added a basic dockerised test suite
