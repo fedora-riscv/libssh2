@@ -20,6 +20,7 @@ URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/snapshots/libssh2-1.7.0-20160217.tar.gz
 Patch0:		libssh2-1.4.2-utf8.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
+BuildRequires:	cmake
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
 BuildRequires:	/usr/bin/man
@@ -65,9 +66,14 @@ developing applications that use libssh2.
 %prep
 %setup -q -n libssh2-1.7.0-20160217
 
+# remove auto-generated files
+rm -v {src,example}/libssh2_config.h.in
+find -name Makefile.am -delete
+find -name Makefile.in -delete
+
 # Replace hard wired port number in the test suite to avoid collisions
 # between 32-bit and 64-bit builds running on a single build-host
-sed -i s/4711/47%{?__isa_bits}/ tests/ssh2.{c,sh}
+sed -i s/4711/47%{?__isa_bits}/ tests/{ssh2.c,sshd_fixture.sh.in}
 
 # Make sure things are UTF-8...
 %patch0 -p1
@@ -80,24 +86,31 @@ chcon $(/usr/sbin/matchpathcon -n /etc/ssh/ssh_host_key) tests/etc/{host,user} |
 %endif
 
 %build
-%configure --disable-static --enable-shared
+mkdir libssh2_build
+cd libssh2_build
+%{cmake} .. -DBUILD_SHARED_LIBS=ON
 make %{?_smp_mflags}
 
 # Avoid polluting libssh2.pc with linker options (#947813)
-sed -i -e 's|[[:space:]]-Wl,[^[:space:]]*||' libssh2.pc
+sed -i -e 's|[[:space:]]-Wl,[^[:space:]]*||' src/libssh2.pc
 
 %install
 rm -rf %{buildroot}
+cd libssh2_build
 make install DESTDIR=%{buildroot} INSTALL="install -p"
 find %{buildroot} -name '*.la' -exec rm -f {} \;
 
 # clean things up a bit for packaging
 make -C example clean
-rm -rf example/.deps
-find example/ -type f '(' -name '*.am' -o -name '*.in' ')' -exec rm -v {} \;
 
 # avoid multilib conflict on libssh2-devel
-mv -v example example.%{_arch}
+mv -v ../example ../example.%{_arch}
+
+# remove redundant files installed by CMake
+rm -rf %{buildroot}/usr/{lib/cmake,share/libssh2}
+
+# these are going to be installed by %%license and %%doc
+rm -f %{buildroot}/usr/share/doc/libssh2/{COPYING,HACKING}
 
 %check
 echo "Running tests for %{_arch}"
@@ -117,7 +130,7 @@ echo "exit 0" > tests/ssh2.sh
 echo "Skipping mansyntax test on PPC* and aarch64"
 echo "exit 0" > tests/mansyntax.sh
 %endif
-make -C tests check
+make -C libssh2_build test
 
 %clean
 rm -rf %{buildroot}
@@ -151,6 +164,7 @@ rm -rf %{buildroot}
 %changelog
 * Wed Feb 17 2016 Kamil Dudka <kdudka@redhat.com> - 1.6.9999-1
 - preview of the upcoming upstream release (libssh2-1.7.0-20160217)
+- use CMake as the build system
 
 * Thu Feb 04 2016 Fedora Release Engineering <releng@fedoraproject.org> - 1.6.0-4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
