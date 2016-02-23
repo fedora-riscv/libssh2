@@ -11,17 +11,21 @@
 %{!?__isa_bits: %global __isa_bits %((echo '#include <bits/wordsize.h>'; echo __WORDSIZE) | cpp - | grep -Ex '32|64')}
 
 Name:		libssh2
-Version:	1.6.0
-Release:	4%{?dist}
+Version:	1.7.0
+Release:	1%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
 URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
 Patch0:		libssh2-1.4.2-utf8.patch
-Patch1:		libssh2-1.6.0-pkgconfig.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
+BuildRequires:	coreutils
+BuildRequires:	findutils
+BuildRequires:	gcc
+BuildRequires:	make
 BuildRequires:	openssl-devel
+BuildRequires:	sed
 BuildRequires:	zlib-devel
 BuildRequires:	/usr/bin/man
 
@@ -73,9 +77,6 @@ sed -i s/4711/47%{?__isa_bits}/ tests/ssh2.{c,sh}
 # Make sure things are UTF-8...
 %patch0 -p1
 
-# Fix pkg-config --libs output (#1279966)
-%patch1
-
 # Make sshd transition appropriately if building in an SELinux environment
 %if !(0%{?fedora} >= 17 || 0%{?rhel} >= 7)
 chcon $(/usr/sbin/matchpathcon -n /etc/rc.d/init.d/sshd) tests/ssh2.sh || :
@@ -84,7 +85,7 @@ chcon $(/usr/sbin/matchpathcon -n /etc/ssh/ssh_host_key) tests/etc/{host,user} |
 %endif
 
 %build
-%configure --disable-static --enable-shared
+%configure --disable-silent-rules --disable-static --enable-shared
 make %{?_smp_mflags}
 
 # Avoid polluting libssh2.pc with linker options (#947813)
@@ -153,6 +154,13 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Tue Feb 23 2016 Paul Howarth <paul@city-fan.org> - 1.7.0-1
+- Update to 1.7.0
+  - diffie_hellman_sha256: Convert bytes to bits (CVE-2016-0787); see
+    http://www.libssh2.org/adv_20160223.html
+  - libssh2_session_set_last_error: Add function
+  - See RELEASE-NOTES for details of bug fixes
+
 * Thu Feb 04 2016 Fedora Release Engineering <releng@fedoraproject.org> - 1.6.0-4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
 
