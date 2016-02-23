@@ -12,13 +12,14 @@
 
 Name:		libssh2
 Version:	1.5.0
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
 URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
 Patch0:		libssh2-1.4.2-utf8.patch
+Patch2:		https://www.libssh2.org/CVE-2016-0787.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
 BuildRequires:	openssl-devel
 BuildRequires:	zlib-devel
@@ -71,6 +72,11 @@ sed -i s/4711/47%{?__isa_bits}/ tests/ssh2.{c,sh}
 
 # Make sure things are UTF-8...
 %patch0 -p1
+
+# Make sure that there's a conversion done from number of bytes to number of
+# bits when the internal _libssh2_bn_rand function is called (CVE-2016-0787)
+# https://www.libssh2.org/adv_20160223.html
+%patch2 -p1
 
 # Make sshd transition appropriately if building in an SELinux environment
 %if !(0%{?fedora} >= 17 || 0%{?rhel} >= 7)
@@ -149,6 +155,11 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Tue Feb 23 2016 Paul Howarth <paul@city-fan.org> - 1.5.0-2
+- Make sure that there's a conversion done from number of bytes to number of
+  bits when the internal _libssh2_bn_rand function is called (CVE-2016-0787)
+  https://www.libssh2.org/adv_20160223.html
+
 * Wed Mar 11 2015 Paul Howarth <paul@city-fan.org> - 1.5.0-1
 - Update to 1.5.0
   - See RELEASE-NOTES for details of bug fixes and enhancements
