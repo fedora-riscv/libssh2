@@ -12,13 +12,12 @@
 
 Name:		libssh2
 Version:	1.7.0
-Release:	2%{?dist}
+Release:	3%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
 URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
-Patch0:		libssh2-1.4.2-utf8.patch
 Patch2:		CVE-2016-0787.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
 BuildRequires:	coreutils
@@ -74,9 +73,6 @@ developing applications that use libssh2.
 # Replace hard wired port number in the test suite to avoid collisions
 # between 32-bit and 64-bit builds running on a single build-host
 sed -i s/4711/47%{?__isa_bits}/ tests/ssh2.{c,sh}
-
-# Make sure things are UTF-8...
-%patch0 -p1
 
 # diffie_hellman_sha1: Convert bytes to bits (additional fix for CVE-2016-0787)
 %patch2 -p1
@@ -158,6 +154,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Wed Feb 24 2016 Paul Howarth <paul@city-fan.org> - 1.7.0-3
+- Drop UTF-8 patch, which breaks things rather than fixes them
+
 * Wed Feb 24 2016 Kamil Dudka <kdudka@redhat.com> - 1.7.0-2
 - diffie_hellman_sha1: Convert bytes to bits (additional fix for CVE-2016-0787)
 
