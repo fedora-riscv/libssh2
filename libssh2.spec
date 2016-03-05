@@ -1,25 +1,16 @@
-# Fedora 10 onwards support noarch subpackages; by using one, we can
-# put the arch-independent docs in a common subpackage and save lots
-# of space on the mirrors
-%if 0%{?fedora} > 9 || 0%{?rhel} > 5
-%global noarch_docs_package 1
-%else
-%global noarch_docs_package 0
-%endif
-
 # Define %%{__isa_bits} for old releases
 %{!?__isa_bits: %global __isa_bits %((echo '#include <bits/wordsize.h>'; echo __WORDSIZE) | cpp - | grep -Ex '32|64')}
 
 Name:		libssh2
 Version:	1.7.0
-Release:	3%{?dist}
+Release:	4%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
 URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
 Patch2:		CVE-2016-0787.patch
-BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
+
 BuildRequires:	coreutils
 BuildRequires:	findutils
 BuildRequires:	gcc
@@ -28,16 +19,11 @@ BuildRequires:	openssl-devel
 BuildRequires:	sed
 BuildRequires:	zlib-devel
 BuildRequires:	/usr/bin/man
+BuildRequires:	libselinux-utils
+BuildRequires:	selinux-policy-targeted
 
 # Test suite requirements - we run the OpenSSH server and try to connect to it
 BuildRequires:	openssh-server
-# We use matchpathcon to get the correct SELinux context for the ssh server
-# initialization script so that it can transition correctly in an SELinux
-# environment; matchpathcon is only available from FC-4 and moved from the
-# libselinux to libselinux-utils package in F-10
-%if (0%{?fedora} >= 4 || 0%{?rhel} >= 5) && !(0%{?fedora} >=17 || 0%{?rhel} >=7)
-BuildRequires:	/usr/sbin/matchpathcon selinux-policy-targeted
-%endif
 
 %description
 libssh2 is a library implementing the SSH2 protocol as defined by
@@ -59,9 +45,7 @@ developing applications that use libssh2.
 Summary:	Documentation for libssh2
 Group:		Development/Libraries
 Requires:	%{name} = %{version}-%{release}
-%if %{noarch_docs_package}
 BuildArch:	noarch
-%endif
 
 %description	docs
 The libssh2-docs package contains man pages and examples for
@@ -92,14 +76,13 @@ make %{?_smp_mflags}
 sed -i -e 's|[[:space:]]-Wl,[^[:space:]]*||' libssh2.pc
 
 %install
-rm -rf %{buildroot}
 make install DESTDIR=%{buildroot} INSTALL="install -p"
-find %{buildroot} -name '*.la' -exec rm -f {} \;
+find %{buildroot} -name '*.la' -delete
 
 # clean things up a bit for packaging
 make -C example clean
 rm -rf example/.deps
-find example/ -type f '(' -name '*.am' -o -name '*.in' ')' -exec rm -v {} \;
+find example/ -type f '(' -name '*.am' -o -name '*.in' ')' -delete
 
 # avoid multilib conflict on libssh2-devel
 mv -v example example.%{_arch}
@@ -124,20 +107,15 @@ echo "exit 0" > tests/mansyntax.sh
 %endif
 make -C tests check
 
-%clean
-rm -rf %{buildroot}
 
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
 
 %files
-%if 0%{?_licensedir:1}
+%{!?_licensedir:%global license %%doc}
 %license COPYING
-%else
-%doc COPYING
-%endif
-%doc docs/AUTHORS ChangeLog NEWS README RELEASE-NOTES
+%doc docs/AUTHORS README RELEASE-NOTES
 %{_libdir}/libssh2.so.1
 %{_libdir}/libssh2.so.1.*
 
@@ -154,6 +132,10 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Sat Mar  5 2016 Peter Robinson <pbrobinson@fedoraproject.org> 1.7.0-4
+- Modernise spec (no we really don't care about el4/fc4)
+- Don't ship ChangeLog/NEWS, duplicates of RELEASE-NOTES
+
 * Wed Feb 24 2016 Paul Howarth <paul@city-fan.org> - 1.7.0-3
 - Drop UTF-8 patch, which breaks things rather than fixes them
 
