@@ -12,7 +12,7 @@
 
 Name:		libssh2
 Version:	1.7.0
-Release:	6%{?dist}
+Release:	7%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
@@ -20,6 +20,7 @@ URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
 Patch2:		CVE-2016-0787.patch
 Patch3:		libssh2-1.7.0-openssl11.patch
+Patch4:		libssh2-1.7.0-openssl11-memleak.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
 
 BuildRequires:	coreutils
@@ -78,8 +79,12 @@ sed -i s/4711/47%{?__isa_bits}/ tests/ssh2.{c,sh}
 
 # diffie_hellman_sha1: Convert bytes to bits (additional fix for CVE-2016-0787)
 %patch2 -p1
+
 # Build with OpenSSL 1.1.0 from upstream git
 %patch3 -p1
+
+# make curl test-suite work again with valgrind enabled
+%patch4 -p1
 
 # Make sshd transition appropriately if building in an SELinux environment
 %if !(0%{?fedora} >= 17 || 0%{?rhel} >= 7)
@@ -155,6 +160,9 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Thu Oct 20 2016 Kamil Dudka <kdudka@redhat.com> - 1.7.0-7
+- make curl test-suite work again with valgrind enabled
+
 * Tue Oct 11 2016 Tomáš Mráz <tmraz@redhat.com> - 1.7.0-6
 - rebuild with OpenSSL 1.1.0
 
