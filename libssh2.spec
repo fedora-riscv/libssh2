@@ -11,16 +11,13 @@
 %{!?__isa_bits: %global __isa_bits %((echo '#include <bits/wordsize.h>'; echo __WORDSIZE) | cpp - | grep -Ex '32|64')}
 
 Name:		libssh2
-Version:	1.7.0
-Release:	7%{?dist}
+Version:	1.8.0
+Release:	1%{?dist}
 Summary:	A library implementing the SSH2 protocol
 Group:		System Environment/Libraries
 License:	BSD
 URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
-Patch2:		CVE-2016-0787.patch
-Patch3:		libssh2-1.7.0-openssl11.patch
-Patch4:		libssh2-1.7.0-openssl11-memleak.patch
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
 
 BuildRequires:	coreutils
@@ -77,15 +74,6 @@ developing applications that use libssh2.
 # between 32-bit and 64-bit builds running on a single build-host
 sed -i s/4711/47%{?__isa_bits}/ tests/ssh2.{c,sh}
 
-# diffie_hellman_sha1: Convert bytes to bits (additional fix for CVE-2016-0787)
-%patch2 -p1
-
-# Build with OpenSSL 1.1.0 from upstream git
-%patch3 -p1
-
-# make curl test-suite work again with valgrind enabled
-%patch4 -p1
-
 # Make sshd transition appropriately if building in an SELinux environment
 %if !(0%{?fedora} >= 17 || 0%{?rhel} >= 7)
 chcon $(/usr/sbin/matchpathcon -n /etc/rc.d/init.d/sshd) tests/ssh2.sh || :
@@ -96,9 +84,6 @@ chcon $(/usr/sbin/matchpathcon -n /etc/ssh/ssh_host_key) tests/etc/{host,user} |
 %build
 %configure --disable-silent-rules --disable-static --enable-shared
 make %{?_smp_mflags}
-
-# Avoid polluting libssh2.pc with linker options (#947813)
-sed -i -e 's|[[:space:]]-Wl,[^[:space:]]*||' libssh2.pc
 
 %install
 rm -rf %{buildroot}
@@ -160,11 +145,17 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Tue Oct 25 2016 Paul Howarth <paul@city-fan.org> - 1.8.0-1
+- Update to 1.8.0
+  - Added a basic dockerised test suite
+  - crypto: Add support for the mbedTLS backend
+  - See RELEASE-NOTES for details of bug fixes
+
 * Thu Oct 20 2016 Kamil Dudka <kdudka@redhat.com> - 1.7.0-7
-- make curl test-suite work again with valgrind enabled
+- Make curl test-suite work again with valgrind enabled
 
 * Tue Oct 11 2016 Tomáš Mráz <tmraz@redhat.com> - 1.7.0-6
-- rebuild with OpenSSL 1.1.0
+- Rebuild with OpenSSL 1.1.0
 
 * Sun Mar  6 2016 Paul Howarth <paul@city-fan.org> - 1.7.0-5
 - Revert parts of previous change that broke EL-5 compatibility
