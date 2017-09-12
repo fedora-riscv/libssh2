@@ -1,24 +1,11 @@
-# Fedora 10 onwards support noarch subpackages; by using one, we can
-# put the arch-independent docs in a common subpackage and save lots
-# of space on the mirrors
-%if 0%{?fedora} > 9 || 0%{?rhel} > 5
-%global noarch_docs_package 1
-%else
-%global noarch_docs_package 0
-%endif
-
-# Define %%{__isa_bits} for old releases
-%{!?__isa_bits: %global __isa_bits %((echo '#include <bits/wordsize.h>'; echo __WORDSIZE) | cpp - | grep -Ex '32|64')}
-
 Name:		libssh2
 Version:	1.8.0
-Release:	4%{?dist}
+Release:	5%{?dist}
 Summary:	A library implementing the SSH2 protocol
-Group:		System Environment/Libraries
 License:	BSD
 URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
-BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(id -nu)
+Patch1:		0001-scp-do-not-NUL-terminate-the-command-for-remote-exec.patch
 
 BuildRequires:	coreutils
 BuildRequires:	findutils
@@ -47,8 +34,7 @@ SECSH-DHGEX(04), and SECSH-NUMBERS(10).
 
 %package	devel
 Summary:	Development files for libssh2
-Group:		Development/Libraries
-Requires:	%{name} = %{version}-%{release}
+Requires:	%{name}%{?_isa} = %{version}-%{release}
 Requires:	pkgconfig
 
 %description	devel
@@ -57,11 +43,8 @@ developing applications that use libssh2.
 
 %package	docs
 Summary:	Documentation for libssh2
-Group:		Development/Libraries
 Requires:	%{name} = %{version}-%{release}
-%if %{noarch_docs_package}
 BuildArch:	noarch
-%endif
 
 %description	docs
 The libssh2-docs package contains man pages and examples for
@@ -70,9 +53,14 @@ developing applications that use libssh2.
 %prep
 %setup -q
 
+# scp: do not NUL-terminate the command for remote exec
+# https://bugzilla.redhat.com/show_bug.cgi?id=1489736
+# https://github.com/libssh2/libssh2/pull/208
+%patch1 -p1
+
 # Replace hard wired port number in the test suite to avoid collisions
 # between 32-bit and 64-bit builds running on a single build-host
-sed -i s/4711/47%{?__isa_bits}/ tests/ssh2.{c,sh}
+sed -i s/4711/47%{__isa_bits}/ tests/ssh2.{c,sh}
 
 # Make sshd transition appropriately if building in an SELinux environment
 %if !(0%{?fedora} >= 17 || 0%{?rhel} >= 7)
@@ -86,7 +74,6 @@ chcon $(/usr/sbin/matchpathcon -n /etc/ssh/ssh_host_key) tests/etc/{host,user} |
 make %{?_smp_mflags}
 
 %install
-rm -rf %{buildroot}
 make install DESTDIR=%{buildroot} INSTALL="install -p"
 find %{buildroot} -name '*.la' -delete
 
@@ -118,9 +105,6 @@ echo "exit 0" > tests/mansyntax.sh
 %endif
 make -C tests check
 
-%clean
-rm -rf %{buildroot}
-
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
@@ -145,6 +129,15 @@ rm -rf %{buildroot}
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Tue Sep 12 2017 Paul Howarth <paul@city-fan.org> - 1.8.0-5
+- scp: Do not NUL-terminate the command for remote exec (#1489736, GH#208)
+- Make devel package dependency on main package arch-specific
+- Drop EL-5 support
+  - noarch sub-packages always available now
+  - Drop legacy Group: and BuildRoot: tags
+  - Drop explicit buildroot cleaning
+  - %%{__isa_bits} always defined now
+
 * Thu Aug 03 2017 Fedora Release Engineering <releng@fedoraproject.org> - 1.8.0-4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_27_Binutils_Mass_Rebuild
 
@@ -345,7 +338,7 @@ rm -rf %{buildroot}
   - OpenSSL EVP: fix threaded use of structs
   - _libssh2_channel_read: react on errors from receive_window_adjust
   - sftp_read: cap the read ahead maximum amount
-  - _libssh2_channel_read: fix non-blocking window adjusting 
+  - _libssh2_channel_read: fix non-blocking window adjusting
 - add upstream patch fixing undefined function reference in libgcrypt backend
 - BR: /usr/bin/man for test suite
 
