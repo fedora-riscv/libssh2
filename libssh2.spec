@@ -1,6 +1,6 @@
 Name:		libssh2
 Version:	1.8.0
-Release:	5%{?dist}
+Release:	6%{?dist}
 Summary:	A library implementing the SSH2 protocol
 License:	BSD
 URL:		http://www.libssh2.org/
@@ -105,9 +105,7 @@ echo "exit 0" > tests/mansyntax.sh
 %endif
 make -C tests check
 
-%post -p /sbin/ldconfig
-
-%postun -p /sbin/ldconfig
+%ldconfig_scriptlets
 
 %files
 %{!?_licensedir:%global license %%doc}
@@ -129,6 +127,9 @@ make -C tests check
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Sat Feb 03 2018 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 1.8.0-6
+- Switch to %%ldconfig_scriptlets
+
 * Tue Sep 12 2017 Paul Howarth <paul@city-fan.org> - 1.8.0-5
 - scp: Do not NUL-terminate the command for remote exec (#1489736, GH#208)
 - Make devel package dependency on main package arch-specific
