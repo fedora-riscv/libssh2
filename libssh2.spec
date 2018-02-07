@@ -1,6 +1,6 @@
 Name:		libssh2
 Version:	1.8.0
-Release:	6%{?dist}
+Release:	7%{?dist}
 Summary:	A library implementing the SSH2 protocol
 License:	BSD
 URL:		http://www.libssh2.org/
@@ -127,6 +127,9 @@ make -C tests check
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Wed Feb 07 2018 Fedora Release Engineering <releng@fedoraproject.org> - 1.8.0-7
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_28_Mass_Rebuild
+
 * Sat Feb 03 2018 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 1.8.0-6
 - Switch to %%ldconfig_scriptlets
 
