@@ -1,6 +1,6 @@
 Name:		libssh2
 Version:	1.8.0
-Release:	9%{?dist}
+Release:	10%{?dist}
 Summary:	A library implementing the SSH2 protocol
 License:	BSD
 URL:		http://www.libssh2.org/
@@ -18,6 +18,10 @@ BuildRequires:	/usr/bin/man
 
 # Test suite requirements - we run the OpenSSH server and try to connect to it
 BuildRequires:	openssh-server
+# Need a valid locale to run the mansyntax check
+%if 0%{?fedora} > 23 || 0%{?rhel} > 7
+BuildRequires:	glibc-langpack-en
+%endif
 # We use matchpathcon to get the correct SELinux context for the ssh server
 # initialization script so that it can transition correctly in an SELinux
 # environment
@@ -103,7 +107,7 @@ echo "exit 0" > tests/ssh2.sh
 echo "Skipping mansyntax test on PPC* and aarch64"
 echo "exit 0" > tests/mansyntax.sh
 %endif
-make -C tests check
+LC_ALL=en_US.UTF-8 make -C tests check
 
 %ldconfig_scriptlets
 
@@ -127,6 +131,10 @@ make -C tests check
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Mon Feb  4 2019 Paul Howarth <paul@city-fan.org> - 1.8.0-10
+- Explicitly run the test suite in the en_US.UTF-8 locale to work around flaky
+  locale settings in mock builders
+
 * Fri Feb 01 2019 Fedora Release Engineering <releng@fedoraproject.org> - 1.8.0-9
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_30_Mass_Rebuild
 
