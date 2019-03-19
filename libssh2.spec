@@ -1,11 +1,12 @@
 Name:		libssh2
-Version:	1.8.0
-Release:	10%{?dist}
+Version:	1.8.1
+Release:	1%{?dist}
 Summary:	A library implementing the SSH2 protocol
 License:	BSD
 URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
 Patch1:		0001-scp-do-not-NUL-terminate-the-command-for-remote-exec.patch
+Patch2:		https://github.com/libssh2/libssh2/commit/74ecd0e1.patch
 
 BuildRequires:	coreutils
 BuildRequires:	findutils
@@ -61,6 +62,11 @@ developing applications that use libssh2.
 # https://bugzilla.redhat.com/show_bug.cgi?id=1489736
 # https://github.com/libssh2/libssh2/pull/208
 %patch1 -p1
+
+# userauth: fix mis-applied patch in the fix of CVE-2019-3859
+# https://github.com/libssh2/libssh2/issues/325
+# https://github.com/libssh2/libssh2/pull/327
+%patch2 -p1
 
 # Replace hard wired port number in the test suite to avoid collisions
 # between 32-bit and 64-bit builds running on a single build-host
@@ -131,6 +137,30 @@ LC_ALL=en_US.UTF-8 make -C tests check
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Tue Mar 19 2019 Paul Howarth <paul@city-fan.org> - 1.8.1-1
+- Update to 1.8.1
+  - Fixed possible integer overflow when reading a specially crafted packet
+    (CVE-2019-3855)
+  - Fixed possible integer overflow in userauth_keyboard_interactive with a
+    number of extremely long prompt strings (CVE-2019-3863)
+  - Fixed possible integer overflow if the server sent an extremely large
+    number of keyboard prompts (CVE-2019-3856)
+  - Fixed possible out of bounds read when processing a specially crafted
+    packet (CVE-2019-3861)
+  - Fixed possible integer overflow when receiving a specially crafted exit
+    signal message channel packet (CVE-2019-3857)
+  - Fixed possible out of bounds read when receiving a specially crafted exit
+    status message channel packet (CVE-2019-3862)
+  - Fixed possible zero byte allocation when reading a specially crafted SFTP
+    packet (CVE-2019-3858)
+  - Fixed possible out of bounds reads when processing specially crafted SFTP
+    packets (CVE-2019-3860)
+  - Fixed possible out of bounds reads in _libssh2_packet_require(v)
+    (CVE-2019-3859)
+- Fix mis-applied patch in the fix of CVE-2019-3859
+  - https://github.com/libssh2/libssh2/issues/325
+  - https://github.com/libssh2/libssh2/pull/327
+
 * Mon Feb  4 2019 Paul Howarth <paul@city-fan.org> - 1.8.0-10
 - Explicitly run the test suite in the en_US.UTF-8 locale to work around flaky
   locale settings in mock builders
