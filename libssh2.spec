@@ -1,12 +1,11 @@
 Name:		libssh2
-Version:	1.8.1
+Version:	1.8.2
 Release:	1%{?dist}
 Summary:	A library implementing the SSH2 protocol
 License:	BSD
 URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
 Patch1:		0001-scp-do-not-NUL-terminate-the-command-for-remote-exec.patch
-Patch2:		https://github.com/libssh2/libssh2/commit/74ecd0e1.patch
 
 BuildRequires:	coreutils
 BuildRequires:	findutils
@@ -62,11 +61,6 @@ developing applications that use libssh2.
 # https://bugzilla.redhat.com/show_bug.cgi?id=1489736
 # https://github.com/libssh2/libssh2/pull/208
 %patch1 -p1
-
-# userauth: fix mis-applied patch in the fix of CVE-2019-3859
-# https://github.com/libssh2/libssh2/issues/325
-# https://github.com/libssh2/libssh2/pull/327
-%patch2 -p1
 
 # Replace hard wired port number in the test suite to avoid collisions
 # between 32-bit and 64-bit builds running on a single build-host
@@ -137,6 +131,11 @@ LC_ALL=en_US.UTF-8 make -C tests check
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Tue Mar 26 2019 Paul Howarth <paul@city-fan.org> - 1.8.2-1
+- Update to 1.8.2
+  - Fixed the misapplied userauth patch that broke 1.8.1
+  - Moved the MAX size declarations from the public header
+
 * Tue Mar 19 2019 Paul Howarth <paul@city-fan.org> - 1.8.1-1
 - Update to 1.8.1
   - Fixed possible integer overflow when reading a specially crafted packet
