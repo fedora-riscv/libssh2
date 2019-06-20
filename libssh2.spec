@@ -1,17 +1,16 @@
 Name:		libssh2
-Version:	1.8.2
+Version:	1.9.0
 Release:	1%{?dist}
 Summary:	A library implementing the SSH2 protocol
 License:	BSD
 URL:		http://www.libssh2.org/
 Source0:	http://libssh2.org/download/libssh2-%{version}.tar.gz
-Patch1:		0001-scp-do-not-NUL-terminate-the-command-for-remote-exec.patch
 
 BuildRequires:	coreutils
 BuildRequires:	findutils
 BuildRequires:	gcc
 BuildRequires:	make
-BuildRequires:	openssl-devel
+BuildRequires:	openssl-devel > 1:1.0.1
 BuildRequires:	sed
 BuildRequires:	zlib-devel
 BuildRequires:	/usr/bin/man
@@ -21,13 +20,6 @@ BuildRequires:	openssh-server
 # Need a valid locale to run the mansyntax check
 %if 0%{?fedora} > 23 || 0%{?rhel} > 7
 BuildRequires:	glibc-langpack-en
-%endif
-# We use matchpathcon to get the correct SELinux context for the ssh server
-# initialization script so that it can transition correctly in an SELinux
-# environment
-%if !(0%{?fedora} >= 17 || 0%{?rhel} >= 7)
-BuildRequires:	libselinux-utils
-BuildRequires:	selinux-policy-targeted
 %endif
 
 %description
@@ -57,28 +49,16 @@ developing applications that use libssh2.
 %prep
 %setup -q
 
-# scp: do not NUL-terminate the command for remote exec
-# https://bugzilla.redhat.com/show_bug.cgi?id=1489736
-# https://github.com/libssh2/libssh2/pull/208
-%patch1 -p1
-
 # Replace hard wired port number in the test suite to avoid collisions
 # between 32-bit and 64-bit builds running on a single build-host
 sed -i s/4711/47%{__isa_bits}/ tests/ssh2.{c,sh}
 
-# Make sshd transition appropriately if building in an SELinux environment
-%if !(0%{?fedora} >= 17 || 0%{?rhel} >= 7)
-chcon $(/usr/sbin/matchpathcon -n /etc/rc.d/init.d/sshd) tests/ssh2.sh || :
-chcon -R $(/usr/sbin/matchpathcon -n /etc) tests/etc || :
-chcon $(/usr/sbin/matchpathcon -n /etc/ssh/ssh_host_key) tests/etc/{host,user} || :
-%endif
-
 %build
 %configure --disable-silent-rules --disable-static --enable-shared
-make %{?_smp_mflags}
+%{make_build}
 
 %install
-make install DESTDIR=%{buildroot} INSTALL="install -p"
+%{make_install} INSTALL="install -p"
 find %{buildroot} -name '*.la' -delete
 
 # clean things up a bit for packaging
@@ -131,6 +111,39 @@ LC_ALL=en_US.UTF-8 make -C tests check
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Thu Jun 20 2019 Paul Howarth <paul@city-fan.org> - 1.9.0-1
+- Update to 1.9.0
+  - Adds ECDSA keys and host key support when using OpenSSL
+  - Adds ED25519 key and host key support when using OpenSSL 1.1.1
+  - Adds OpenSSH style key file reading
+  - Adds AES CTR mode support when using WinCNG
+  - Adds PEM passphrase protected file support for libgcrypt and WinCNG
+  - Adds SHA256 hostkey fingerprint
+  - Adds libssh2_agent_get_identity_path() and libssh2_agent_set_identity_path()
+  - Adds explicit zeroing of sensitive data in memory
+  - Adds additional bounds checks to network buffer reads
+  - Adds the ability to use the server default permissions when creating sftp directories
+  - Adds support for building with OpenSSL no engine flag
+  - Adds support for building with LibreSSL
+  - Increased sftp packet size to 256k
+  - Fixed oversized packet handling in sftp
+  - Fixed building with OpenSSL 1.1
+  - Fixed a possible crash if sftp stat gets an unexpected response
+  - Fixed incorrect parsing of the KEX preference string value
+  - Fixed conditional RSA and AES-CTR support
+  - Fixed a small memory leak during the key exchange process
+  - Fixed a possible memory leak of the ssh banner string
+  - Fixed various small memory leaks in the backends
+  - Fixed possible out of bounds read when parsing public keys from the server
+  - Fixed possible out of bounds read when parsing invalid PEM files
+  - No longer null terminates the scp remote exec command
+  - Now handle errors when Diffie Hellman key pair generation fails
+  - Fixed compiling on Windows with the flag STDCALL=ON
+  - Improved building instructions
+  - Improved unit tests
+- Needs OpenSSL ≥ 1.0.1 now as ECC support is assumed
+- Modernize spec somewhat as EL-6 can no longer be supported
+
 * Tue Mar 26 2019 Paul Howarth <paul@city-fan.org> - 1.8.2-1
 - Update to 1.8.2
   - Fixed the misapplied userauth patch that broke 1.8.1
