@@ -113,6 +113,7 @@ LC_ALL=en_US.UTF-8 make -C tests check
 %changelog
 * Thu Jun 20 2019 Paul Howarth <paul@city-fan.org> - 1.9.0-1
 - Update to 1.9.0
+  - Fixed integer overflow leading to out-of-bounds read (CVE-2019-13115)
   - Adds ECDSA keys and host key support when using OpenSSL
   - Adds ED25519 key and host key support when using OpenSSL 1.1.1
   - Adds OpenSSH style key file reading
