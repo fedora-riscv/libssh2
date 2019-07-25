@@ -1,6 +1,6 @@
 Name:		libssh2
 Version:	1.9.0
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	A library implementing the SSH2 protocol
 License:	BSD
 URL:		http://www.libssh2.org/
@@ -111,6 +111,9 @@ LC_ALL=en_US.UTF-8 make -C tests check
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Thu Jul 25 2019 Fedora Release Engineering <releng@fedoraproject.org> - 1.9.0-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_31_Mass_Rebuild
+
 * Thu Jun 20 2019 Paul Howarth <paul@city-fan.org> - 1.9.0-1
 - Update to 1.9.0
   - Fixed integer overflow leading to out-of-bounds read (CVE-2019-13115)
