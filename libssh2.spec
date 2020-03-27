@@ -18,7 +18,10 @@ BuildRequires:	sed
 BuildRequires:	zlib-devel
 BuildRequires:	/usr/bin/man
 
-# Test suite requirements - we run the OpenSSH server and try to connect to it
+# Test suite requirements
+# Full groff (not just groff-base) needed for the mansyntax check
+BuildRequires:	groff
+# We run the OpenSSH server and try to connect to it
 BuildRequires:	openssh-server
 # Need a valid locale to run the mansyntax check
 %if 0%{?fedora} > 23 || 0%{?rhel} > 7
@@ -117,6 +120,7 @@ LC_ALL=en_US.UTF-8 make -C tests check
 %changelog
 * Fri Mar 27 2020 Paul Howarth <paul@city-fan.org> - 1.9.0-5
 - Switch to https:// upstream URLs
+- Full groff (not just groff-base) needed for the mansyntax check
 
 * Wed Jan 29 2020 Fedora Release Engineering <releng@fedoraproject.org> - 1.9.0-4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_32_Mass_Rebuild
