@@ -1,6 +1,6 @@
 Name:		libssh2
 Version:	1.9.0
-Release:	5%{?dist}
+Release:	6%{?dist}
 Summary:	A library implementing the SSH2 protocol
 License:	BSD
 URL:		https://www.libssh2.org/
@@ -118,6 +118,9 @@ LC_ALL=en_US.UTF-8 make -C tests check
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Tue Jul 28 2020 Fedora Release Engineering <releng@fedoraproject.org> - 1.9.0-6
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_33_Mass_Rebuild
+
 * Fri Mar 27 2020 Paul Howarth <paul@city-fan.org> - 1.9.0-5
 - Switch to https:// upstream URLs
 - Full groff (not just groff-base) needed for the mansyntax check
