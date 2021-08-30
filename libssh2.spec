@@ -1,13 +1,10 @@
 Name:		libssh2
-Version:	1.9.0
-Release:	8%{?dist}
+Version:	1.10.0
+Release:	1%{?dist}
 Summary:	A library implementing the SSH2 protocol
 License:	BSD
 URL:		https://www.libssh2.org/
 Source0:	https://libssh2.org/download/libssh2-%{version}.tar.gz
-
-# Fix integer overflow in SSH_MSG_DISCONNECT logic (CVE-2019-17498)
-Patch1:		0001-libssh2-1.9.0-CVE-2019-17498.patch
 
 BuildRequires:	coreutils
 BuildRequires:	findutils
@@ -54,7 +51,6 @@ developing applications that use libssh2.
 
 %prep
 %setup -q
-%patch1 -p1
 
 # Replace hard wired port number in the test suite to avoid collisions
 # between 32-bit and 64-bit builds running on a single build-host
@@ -118,6 +114,53 @@ LC_ALL=en_US.UTF-8 make -C tests check
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Mon Aug 30 2021 Paul Howarth <paul@city-fan.org> - 1.10.0-1
+- Update to 1.10.0
+  - Adds agent forwarding support
+  - Adds OpenSSH Agent support on Windows
+  - Adds ECDSA key support using the Mbed TLS backend
+  - Adds ECDSA cert authentication
+  - Adds diffie-hellman-group14-sha256, diffie-hellman-group16-sha512,
+    diffie-hellman-group18-sha512 key exchanges
+  - Adds support for PKIX key reading when using ed25519 with OpenSSL
+  - Adds support for EWOULDBLOCK on VMS systems
+  - Adds support for building with OpenSSL 3
+  - Adds support for using FIPS mode in OpenSSL
+  - Adds debug symbols when building with MSVC
+  - Adds support for building on the 3DS
+  - Adds unicode build support on Windows
+  - Restores os400 building
+  - Increases min, max and opt Diffie Hellman group values
+  - Improves portability of the make file
+  - Improves timeout behaviour with 2FA keyboard auth
+  - Various improvements to the Wincng backend
+  - Fixes reading partial packet replies when using an agent
+  - Fixes Diffie Hellman key exchange on Windows 1903+ builds
+  - Fixes building tests with older versions of OpenSSL
+  - Fixes possible multiple definition warnings
+  - Fixes potential cast issues _libssh2_ecdsa_key_get_curve_type()
+  - Fixes potential use after free if libssh2_init() is called twice
+  - Improved linking when using Mbed TLS
+  - Fixes call to libssh2_crypto_exit() if crypto hasn't been initialized
+  - Fixes crash when loading public keys with no id
+  - Fixes possible out of bounds read when exchanging keys
+  - Fixes possible out of bounds read when reading packets
+  - Fixes possible out of bounds read when opening an X11 connection
+  - Fixes possible out of bounds read when ecdh host keys
+  - Fixes possible hang when trying to read a disconnected socket
+  - Fixes a crash when using the delayed compression option
+  - Fixes read error with large known host entries
+  - Fixes various warnings
+  - Fixes various small memory leaks
+  - Improved error handling, various detailed errors will now be reported
+  - Builds are now using OSS-Fuzz
+  - Builds now use autoreconf instead of a custom build script
+  - cmake now respects install directory
+  - Improved CI backend
+  - Updated HACKING-CRYPTO documentation
+  - Use markdown file extensions
+  - Improved unit tests
+
 * Thu Jul 22 2021 Fedora Release Engineering <releng@fedoraproject.org> - 1.9.0-8
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_35_Mass_Rebuild
 
