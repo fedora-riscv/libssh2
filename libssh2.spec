@@ -1,6 +1,6 @@
 Name:		libssh2
 Version:	1.10.0
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	A library implementing the SSH2 protocol
 License:	BSD
 URL:		https://www.libssh2.org/
@@ -114,6 +114,9 @@ LC_ALL=en_US.UTF-8 make -C tests check
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Tue Sep 14 2021 Sahana Prasad <sahana@redhat.com> - 1.10.0-2
+- Rebuilt with OpenSSL 3.0.0
+
 * Mon Aug 30 2021 Paul Howarth <paul@city-fan.org> - 1.10.0-1
 - Update to 1.10.0
   - Adds agent forwarding support
