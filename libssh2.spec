@@ -1,10 +1,11 @@
 Name:		libssh2
 Version:	1.10.0
-Release:	3%{?dist}
+Release:	4%{?dist}
 Summary:	A library implementing the SSH2 protocol
 License:	BSD
 URL:		https://www.libssh2.org/
 Source0:	https://libssh2.org/download/libssh2-%{version}.tar.gz
+Patch1:		libssh2-1.10.0-ssh-rsa-test.patch
 
 BuildRequires:	coreutils
 BuildRequires:	findutils
@@ -52,6 +53,14 @@ developing applications that use libssh2.
 %prep
 %setup -q
 
+# In 8.8 OpenSSH disabled sha1 rsa-sha keys out of the box,
+# so we need to re-enable them as a workaround for the test
+# suite until upstream updates the tests.
+# See: https://github.com/libssh2/libssh2/issues/630
+%if 0%{?fedora} > 33 || 0%{?rhel} > 8
+%patch1
+%endif
+
 # Replace hard wired port number in the test suite to avoid collisions
 # between 32-bit and 64-bit builds running on a single build-host
 sed -i s/4711/47%{__isa_bits}/ tests/ssh2.{c,sh}
@@ -73,29 +82,11 @@ find example/ -type f '(' -name '*.am' -o -name '*.in' ')' -delete
 mv -v example example.%{_arch}
 
 %check
-echo "Running tests for %{_arch}"
-# The SSH test will fail if we don't have /dev/tty, as is the case in some
-# versions of mock (#672713)
-if [ ! -c /dev/tty ]; then
-	echo Skipping SSH test due to missing /dev/tty
-	echo "exit 0" > tests/ssh2.sh
-fi
-# Apparently it fails in the sparc and arm buildsystems too
-%ifarch %{sparc} %{arm}
-echo Skipping SSH test on sparc/arm
-echo "exit 0" > tests/ssh2.sh
-%endif
-# mansyntax check fails on PPC* and aarch64 with some strange locale error
-%ifarch ppc %{power64} aarch64
-echo "Skipping mansyntax test on PPC* and aarch64"
-echo "exit 0" > tests/mansyntax.sh
-%endif
 LC_ALL=en_US.UTF-8 make -C tests check
 
 %ldconfig_scriptlets
 
 %files
-%{!?_licensedir:%global license %%doc}
 %license COPYING
 %doc docs/AUTHORS README RELEASE-NOTES
 %{_libdir}/libssh2.so.1
@@ -114,6 +105,13 @@ LC_ALL=en_US.UTF-8 make -C tests check
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Sun Jan 23 2022 Paul Howarth <paul@city-fan.org> - 1.10.0-4
+- In 8.8 OpenSSH disabled sha1 rsa-sha keys out of the box,
+  so we need to re-enable them as a workaround for the test
+  suite until upstream updates the tests
+  See: https://github.com/libssh2/libssh2/issues/630
+- Drop other test workarounds, none of them being needed any longer
+
 * Thu Jan 20 2022 Fedora Release Engineering <releng@fedoraproject.org> - 1.10.0-3
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_36_Mass_Rebuild
 
