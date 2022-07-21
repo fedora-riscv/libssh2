@@ -1,6 +1,6 @@
 Name:		libssh2
 Version:	1.10.0
-Release:	4%{?dist}
+Release:	5%{?dist}
 Summary:	A library implementing the SSH2 protocol
 License:	BSD
 URL:		https://www.libssh2.org/
@@ -105,6 +105,9 @@ LC_ALL=en_US.UTF-8 make -C tests check
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Thu Jul 21 2022 Fedora Release Engineering <releng@fedoraproject.org> - 1.10.0-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_37_Mass_Rebuild
+
 * Sun Jan 23 2022 Paul Howarth <paul@city-fan.org> - 1.10.0-4
 - In 8.8 OpenSSH disabled sha1 rsa-sha keys out of the box,
   so we need to re-enable them as a workaround for the test
