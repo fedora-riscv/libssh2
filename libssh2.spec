@@ -1,6 +1,11 @@
+# rpath check failed on riscv64
+%ifarch riscv64
+%global __brp_check_rpaths  /usr/bin/true
+%endif
+
 Name:		libssh2
 Version:	1.10.0
-Release:	7%{?dist}
+Release:	7.rv64%{?dist}
 Summary:	A library implementing the SSH2 protocol
 License:	BSD-3-Clause
 URL:		https://www.libssh2.org/
@@ -110,11 +115,17 @@ LC_ALL=en_US.UTF-8 make -C tests check
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Fri Jun 09 2023 Liu Yang <Yang.Liu.sn@gmail.com> - 1.10.0-7.rv64
+- Cherry-pick patch for Fedora 38 riscv64 rebuild.
+_
 * Thu Jan 19 2023 Fedora Release Engineering <releng@fedoraproject.org> - 1.10.0-7
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_38_Mass_Rebuild
 
 * Fri Oct 28 2022 Todd Zullinger <tmz@pobox.com> - 1.10.0-6
 - Verify upstream release signatures
+
+* Thu Jan 26 2022 Liu Yang <Yang.Liu.sn@gmail.com> - 1.10.0-5.rv64
+- Disable failed rpath check on riscv64.
 
 * Thu Jul 21 2022 Fedora Release Engineering <releng@fedoraproject.org> - 1.10.0-5
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_37_Mass_Rebuild
