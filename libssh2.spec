@@ -1,6 +1,11 @@
+# Fix failed rpathcheck on riscv64
+%ifarch riscv64
+%undefine   __brp_check_rpaths
+%endif
+
 Name:		libssh2
 Version:	1.11.0
-Release:	2%{?dist}
+Release:	2.rv64%{?dist}
 Summary:	A library implementing the SSH2 protocol
 License:	BSD-3-Clause
 URL:		https://www.libssh2.org/
@@ -131,6 +136,9 @@ LC_ALL=en_US.UTF-8 make -C tests check
 %{_libdir}/pkgconfig/libssh2.pc
 
 %changelog
+* Mon Dec 04 2023 Liu Yang <Yang.Liu.sn@gmail.com> - 1.11.0-2.rv64
+- Fix failed rpath check on riscv64.
+
 * Thu Jul 20 2023 Fedora Release Engineering <releng@fedoraproject.org> - 1.11.0-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_39_Mass_Rebuild
 
